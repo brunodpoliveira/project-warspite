@@ -47,13 +47,3 @@ These are *explicitly excluded* from this prototype:
 
 ## Success Criteria
 
-✅ If the player can:
-
-1. Build up speed, bounce off walls, and *sometimes* stay in control  
-2. Slow time to grab a bullet mid-air  
-3. Laugh or panic when flying into a wall
-
-…then the concept is viable.
-
-No polish. Only *proof of chaos*.
-
