@@ -1,0 +1,115 @@
+# Unity .gitignore
+# Based on github.com/github/gitignore/Unity.gitignore with common IDE/tool additions
+# Goal: keep repo small/safe to commit; ignore generated/build/cache files
+
+###############
+# Unity caches
+###############
+Library/
+Temp/
+Obj/
+Build/
+Builds/
+Logs/
+UserSettings/
+MemoryCaptures/
+
+# Lightmap / GI cache (older versions may place in Assets/; adjust if needed)
+# LightingData.asset should be tracked; the GI cache itself is in Library by default.
+
+########################
+# Asset pipeline outputs
+########################
+# Addressables build cache (commonly under StreamingAssets/aa)
+Assets/StreamingAssets/aa/
+
+########################
+# OS generated files
+########################
+.DS_Store
+Thumbs.db
+
+########################
+# IDE/editor settings
+########################
+# Visual Studio
+.vs/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.svd
+*.pdb
+*.opendb
+*.VC.db
+
+# VS Code
+.vscode/
+
+# JetBrains Rider / IntelliJ
+.idea/
+*.sln.iml
+
+########################
+# Unity/Platform build artifacts
+########################
+*.apk
+*.aab
+*.ipa
+*.app
+*.bundle
+*.xcworkspace/
+*.xcodeproj/
+DerivedData/
+
+########################
+# Android/Gradle
+########################
+.gradle/
+**/gradle/
+local.properties
+
+# Keystores (keep these out of git; back up securely elsewhere)
+*.keystore
+*.jks
+
+########################
+# Crash/Profiler/Records
+########################
+SysCrashReports/
+CrashReports/
+Recordings/
+
+########################
+# Package cache and temp
+########################
+# Keep Packages/ and Packages/packages-lock.json tracked
+# Do NOT ignore Packages/manifest.json or packages-lock.json
+# Unity caches elsewhere; nothing to add here intentionally
+
+########################
+# Temporary and misc
+########################
+*.tmp
+*.temp
+*.log
+*.orig
+*.bak
+*.swp
+*.swo
+
+########################
+# Unity packages
+########################
+*.unitypackage
+
+########################
+# Note: Keep these tracked
+########################
+# - Assets/ (including .meta files)
+# - ProjectSettings/
+# - Packages/
+# - .gitignore (this file)
+# - Any custom config/build scripts you add
