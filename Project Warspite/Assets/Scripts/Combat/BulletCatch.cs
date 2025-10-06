@@ -76,9 +76,9 @@ namespace Warspite.Combat
         {
             _held = proj;
             _heldRb = proj.GetComponent<Rigidbody>();
-            _held.inboundSpeed = _heldRb.velocity.magnitude;
+            _held.inboundSpeed = _heldRb.linearVelocity.magnitude;
             _heldRb.isKinematic = true;
-            _heldRb.velocity = Vector3.zero;
+            _heldRb.linearVelocity = Vector3.zero;
             _held.transform.SetParent(hand, true);
             _held.transform.position = hand.position;
             _held.transform.rotation = hand.rotation;
@@ -106,7 +106,7 @@ namespace Warspite.Combat
             var cam = Camera.main;
             var dir = cam ? cam.transform.forward : transform.forward;
             float speed = Mathf.Max(5f, _held.inboundSpeed * throwForceMultiplier);
-            _heldRb.velocity = dir.normalized * speed;
+            _heldRb.linearVelocity = dir.normalized * speed;
             _held = null;
             _heldRb = null;
         }

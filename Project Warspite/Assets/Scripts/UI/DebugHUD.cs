@@ -23,7 +23,6 @@ namespace Warspite.UI
                 y += 28;
             }
 
-            // Minimal control hints (fallback keys)
             GUI.Label(new Rect(10, y, 600, 22), "Controls:", style);
             y += 20;
             GUI.Label(new Rect(10, y, 800, 22), "- Time: Q / E", style);
@@ -33,7 +32,6 @@ namespace Warspite.UI
             GUI.Label(new Rect(10, y, 800, 22), "- Throw: Release RMB or press F", style);
             y += 20;
             GUI.Label(new Rect(10, y, 800, 22), "- Restart: R", style);
-            }
         }
     }
 }

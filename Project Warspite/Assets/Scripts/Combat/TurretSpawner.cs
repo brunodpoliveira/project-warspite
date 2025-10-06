@@ -32,7 +32,7 @@ namespace Warspite.Combat
             var p = Instantiate(projectilePrefab, muzzle.position, muzzle.rotation);
             var rb = p.GetComponent<Rigidbody>();
             rb.isKinematic = false;
-            rb.velocity = muzzle.forward * muzzleSpeed;
+            rb.linearVelocity = muzzle.forward * muzzleSpeed;
         }
     }
 }
