@@ -63,7 +63,14 @@ namespace Warspite.Player
             Vector3 inputDir = new Vector3(h, 0, v).normalized;
 
             // Transform input to world space relative to camera
-            Transform camTransform = Camera.main.transform;
+            Camera mainCam = Camera.main;
+            if (mainCam == null)
+            {
+                Debug.LogError("MomentumLocomotion: No camera tagged as 'MainCamera' found!");
+                return;
+            }
+
+            Transform camTransform = mainCam.transform;
             Vector3 forward = Vector3.ProjectOnPlane(camTransform.forward, Vector3.up).normalized;
             Vector3 right = Vector3.ProjectOnPlane(camTransform.right, Vector3.up).normalized;
             Vector3 desiredMoveDir = (forward * inputDir.z + right * inputDir.x).normalized;
