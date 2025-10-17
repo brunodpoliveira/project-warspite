@@ -130,7 +130,8 @@ namespace Warspite.Player
             Vector3 throwDirection = playerCamera.transform.forward;
             caughtProjectile.Launch(throwDirection * throwSpeed);
 
-            caughtProjectile.IsCaught = false;
+            // Keep IsCaught = true so turrets know this is a thrown projectile
+            // caughtProjectile.IsCaught stays true
             caughtProjectile = null;
         }
 

@@ -60,7 +60,10 @@ namespace Warspite.World
         {
             // Create projectile
             GameObject proj = CreateProjectile();
-            proj.transform.position = transform.position;
+            
+            // Spawn slightly in front of turret to avoid collision with turret itself
+            Vector3 spawnOffset = transform.forward * 1f + Vector3.up * 0.5f;
+            proj.transform.position = transform.position + spawnOffset;
 
             // Calculate direction
             Vector3 direction;

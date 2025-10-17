@@ -19,6 +19,9 @@ namespace Warspite.Systems
         [SerializeField] private KeyCode slowerKey = KeyCode.Q;
         [SerializeField] private KeyCode fasterKey = KeyCode.E;
 
+        [Header("Resource (optional)")]
+        [SerializeField] private TimeDilationResource resource;
+
         private int currentLevel = 0; // 0=Normal, 1=Slow1, 2=Slow2, 3=Slow3
         private float baseFixedDeltaTime;
 
@@ -30,9 +33,18 @@ namespace Warspite.Systems
             baseFixedDeltaTime = Time.fixedDeltaTime;
         }
 
+        void Start()
+        {
+            if (resource == null)
+            {
+                resource = GetComponent<TimeDilationResource>();
+            }
+        }
+
         void Update()
         {
             HandleInput();
+            CheckResourceDepletion();
         }
 
         private void HandleInput()
@@ -49,6 +61,13 @@ namespace Warspite.Systems
 
         private void IncreaseSlowdown()
         {
+            // Check if we have resource available
+            if (resource != null && !resource.CanUseDilation() && currentLevel == 0)
+            {
+                // Can't activate dilation without resource
+                return;
+            }
+
             currentLevel = Mathf.Min(currentLevel + 1, 3);
             ApplyTimeLevel();
         }
@@ -57,6 +76,16 @@ namespace Warspite.Systems
         {
             currentLevel = Mathf.Max(currentLevel - 1, 0);
             ApplyTimeLevel();
+        }
+
+        private void CheckResourceDepletion()
+        {
+            // If resource is depleted, force back to normal time
+            if (resource != null && resource.IsEmpty && currentLevel > 0)
+            {
+                currentLevel = 0;
+                ApplyTimeLevel();
+            }
         }
 
         private void ApplyTimeLevel()

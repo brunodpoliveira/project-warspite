@@ -786,6 +786,7 @@ GameObject:
   - component: {fileID: 1202316783}
   - component: {fileID: 1202316785}
   - component: {fileID: 1202316784}
+  - component: {fileID: 1202316786}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -821,7 +822,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Warspite.Systems.DebugHUD
   timeController: {fileID: 1202316785}
+  timeResource: {fileID: 1202316786}
   momentum: {fileID: 1479757055}
+  playerHealth: {fileID: 1479757057}
   showHUD: 1
   toggleKey: 282
 --- !u!114 &1202316785
@@ -842,6 +845,27 @@ MonoBehaviour:
   slowLevel3: 0.05
   slowerKey: 113
   fasterKey: 101
+  resource: {fileID: 0}
+--- !u!114 &1202316786
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1202316782}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 294b753a5431d6a418caba5b1590888c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.Systems.TimeDilationResource
+  maxResource: 1000
+  currentResource: 0
+  rechargeRate: 55
+  normalDrain: 0
+  level1Drain: 5
+  level2Drain: 10
+  level3Drain: 25
+  timeController: {fileID: 1202316785}
 --- !u!1001 &1327701600
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1000,6 +1024,8 @@ GameObject:
   - component: {fileID: 1479757056}
   - component: {fileID: 1479757055}
   - component: {fileID: 1479757054}
+  - component: {fileID: 1479757057}
+  - component: {fileID: 1479757058}
   m_Layer: 0
   m_Name: PlayerObject
   m_TagString: Player
@@ -1100,6 +1126,50 @@ MonoBehaviour:
   catchKey: 324
   throwSpeed: 30
   altThrowKey: 102
+--- !u!114 &1479757057
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1479757051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 015d6a74f70e33d49933df58e71e1dfd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.Core.Health
+  maxHealth: 100
+  currentHealth: 0
+  destroyOnDeath: 1
+  destroyDelay: 0
+  OnDamaged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHealed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &1479757058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1479757051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d1959aceb6c60742847d7fd699ae7ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.Player.PlayerHealth
+  enableDegeneration: 1
+  degenerationRate: 100
+  degenerationDelay: 1
+  suckRange: 3
+  suckHealAmount: 30
+  gibbedHealPenalty: 0.5
+  suckKey: 102
 --- !u!108 &1685010353
 Light:
   m_ObjectHideFlags: 0
@@ -1273,8 +1343,11 @@ GameObject:
   - component: {fileID: 1860185442}
   - component: {fileID: 1860185441}
   - component: {fileID: 1860185440}
+  - component: {fileID: 1860185447}
+  - component: {fileID: 1860185446}
+  - component: {fileID: 1860185445}
   m_Layer: 0
-  m_Name: Cylinder
+  m_Name: Turret
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1389,12 +1462,78 @@ Transform:
   m_GameObject: {fileID: 1860185437}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 26.29, y: 3.2, z: 8.2204}
+  m_LocalPosition: {x: 26.29, y: 1.11, z: 8.2204}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!54 &1860185445
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1860185437}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &1860185446
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1860185437}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfd9788d6bde5b04d97daeb0d8225f2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.World.TurretHealth
+  projectileDamage: 50
+  disableTurretOnDeath: 1
+--- !u!114 &1860185447
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1860185437}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 015d6a74f70e33d49933df58e71e1dfd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.Core.Health
+  maxHealth: 100
+  currentHealth: 0
+  destroyOnDeath: 1
+  destroyDelay: 0
+  OnDamaged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHealed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1898521157
 GameObject:
   m_ObjectHideFlags: 0

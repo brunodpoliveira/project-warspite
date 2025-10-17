@@ -1,5 +1,6 @@
 using UnityEngine;
 using Warspite.Player;
+using Warspite.Core;
 
 namespace Warspite.Systems
 {
@@ -11,7 +12,9 @@ namespace Warspite.Systems
     {
         [Header("References (optional)")]
         [SerializeField] private TimeDilationController timeController;
+        [SerializeField] private TimeDilationResource timeResource;
         [SerializeField] private MomentumLocomotion momentum;
+        [SerializeField] private Health playerHealth;
 
         [Header("Display")]
         [SerializeField] private bool showHUD = true;
@@ -43,9 +46,25 @@ namespace Warspite.Systems
             style.fontStyle = FontStyle.Bold;
 
             // Background
-            GUI.Box(new Rect(10, 10, 300, 150), "");
+            GUI.Box(new Rect(10, 10, 300, 200), "");
 
             int yOffset = 20;
+
+            // Player Health
+            if (playerHealth != null)
+            {
+                string healthText = $"Health: {playerHealth.CurrentHealth:F0}/{playerHealth.MaxHealth:F0}";
+                GUI.Label(new Rect(20, yOffset, 280, 25), healthText, style);
+                yOffset += 25;
+            }
+
+            // Time Resource
+            if (timeResource != null)
+            {
+                string resourceText = $"Time Energy: {timeResource.CurrentResource:F0}/{timeResource.MaxResource:F0}";
+                GUI.Label(new Rect(20, yOffset, 280, 25), resourceText, style);
+                yOffset += 25;
+            }
 
             // Time Level
             if (timeController != null)
@@ -78,7 +97,7 @@ namespace Warspite.Systems
             // Controls hint
             style.fontSize = 12;
             style.fontStyle = FontStyle.Normal;
-            GUI.Label(new Rect(20, yOffset, 280, 20), "Q/E: Time | ESC: Cursor | F1: Toggle HUD", style);
+            GUI.Label(new Rect(20, yOffset, 280, 20), "Q/E: Time | F: Suck | ESC: Cursor | F1: HUD", style);
         }
 
         private void UpdateFPS()
