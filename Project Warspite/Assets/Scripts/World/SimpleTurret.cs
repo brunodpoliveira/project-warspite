@@ -1,10 +1,12 @@
 using UnityEngine;
+using Warspite.UI;
 
 namespace Warspite.World
 {
     /// <summary>
     /// Spawns projectiles at intervals to visualize time slowdown.
     /// Auto-creates simple cube projectiles if no prefab is assigned.
+    /// Notifies TurningCrosshair when firing.
     /// </summary>
     public class SimpleTurret : MonoBehaviour
     {
@@ -22,9 +24,16 @@ namespace Warspite.World
         [Header("Targeting")]
         [SerializeField] private Transform target;
         [SerializeField] private bool trackTarget = true;
+        [SerializeField] private Transform muzzlePoint; // Optional spawn point
+
+        [Header("UI")]
+        [SerializeField] private TurningCrosshair crosshair;
 
         private float lastFireTime;
         private int burstsFired;
+
+        public float LastFireTime => lastFireTime;
+        public float Interval => interval;
 
         void Start()
         {
@@ -61,15 +70,27 @@ namespace Warspite.World
             // Create projectile
             GameObject proj = CreateProjectile();
             
-            // Spawn slightly in front of turret to avoid collision with turret itself
-            Vector3 spawnOffset = transform.forward * 1f + Vector3.up * 0.5f;
-            proj.transform.position = transform.position + spawnOffset;
+            // Determine spawn position
+            Vector3 spawnPosition;
+            if (muzzlePoint != null)
+            {
+                // Use muzzle point if assigned
+                spawnPosition = muzzlePoint.position;
+            }
+            else
+            {
+                // Spawn slightly in front of turret to avoid collision with turret itself
+                Vector3 spawnOffset = transform.forward * 1f + Vector3.up * 0.5f;
+                spawnPosition = transform.position + spawnOffset;
+            }
+            proj.transform.position = spawnPosition;
 
             // Calculate direction
             Vector3 direction;
             if (trackTarget && target != null)
             {
-                direction = (target.position - transform.position).normalized;
+                // Aim at target from spawn position
+                direction = (target.position - spawnPosition).normalized;
             }
             else
             {
@@ -90,6 +111,12 @@ namespace Warspite.World
             if (projectile != null)
             {
                 projectile.Launch(direction * muzzleSpeed);
+            }
+
+            // Notify crosshair
+            if (crosshair != null)
+            {
+                crosshair.OnTurretFired();
             }
         }
 
