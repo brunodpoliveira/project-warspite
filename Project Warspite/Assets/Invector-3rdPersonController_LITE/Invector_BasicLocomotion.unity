@@ -710,6 +710,61 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1898521158}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &989672808
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 989672809}
+  - component: {fileID: 989672810}
+  m_Layer: 0
+  m_Name: HealthBarManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &989672809
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 989672808}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 36.0097, y: -7.42555, z: -3.66968}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &989672810
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 989672808}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe94e8f31e1690b409ed24582766add6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.UI.EnemyHealthBarManager
+  autoDetectEnemies: 1
+  enemyTag: Enemy
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  detectionRadius: 100
+  updateInterval: 0.5
+  healthBarPrefab: {fileID: 0}
+  createPrefabIfMissing: 1
+  defaultOffset: {x: 0, y: 2, z: 0}
+  defaultSize: {x: 1, y: 0.1}
 --- !u!1 &1098806137
 GameObject:
   m_ObjectHideFlags: 0
@@ -1358,12 +1413,12 @@ GameObject:
   - component: {fileID: 1860185447}
   - component: {fileID: 1860185446}
   - component: {fileID: 1860185445}
-  - component: {fileID: 1860185449}
   - component: {fileID: 1860185448}
   - component: {fileID: 1860185450}
+  - component: {fileID: 1860185451}
   m_Layer: 0
   m_Name: Turret
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1570,21 +1625,6 @@ MonoBehaviour:
   showCriticalIndicator: 1
   criticalThreshold: 0.25
   maxTagDuration: 10
---- !u!114 &1860185449
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1860185437}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 221b9ffbe873a5d4bb3c06749fcd2cc7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Warspite.UI.AutoHealthBar
-  offset: {x: 0, y: 2, z: 0}
-  hideWhenFull: 0
-  hideWhenDead: 0
 --- !u!114 &1860185450
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1606,6 +1646,22 @@ MonoBehaviour:
   crosshairSize: 50
   offset: {x: 0, y: 3, z: 0}
   worldSpace: 1
+--- !u!114 &1860185451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1860185437}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80daad39b0e1f614bb2756eff60e48d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.UI.AutoHealthBar
+  offset: {x: 0, y: 2, z: 0}
+  size: {x: 1, y: 0.1}
+  createOnStart: 1
+  healthBarPrefab: {fileID: 0}
 --- !u!1 &1898521157
 GameObject:
   m_ObjectHideFlags: 0
@@ -1678,3 +1734,4 @@ SceneRoots:
   - {fileID: 1860185444}
   - {fileID: 736015647}
   - {fileID: 1479757053}
+  - {fileID: 989672809}
