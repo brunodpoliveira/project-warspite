@@ -34,9 +34,13 @@ We only want to answer one question:
 - **Time**: `Q` (slower) / `E` (faster)
 - **Move**: `WASD`
 - **Mouse**: Look
-- **Catch (L3 only)**: Hold Right Mouse Button near a bullet
-- **Throw**: Release RMB or press `F`
+- **Catch (L3 only)**: Hold Right Mouse Button near a bullet (must be in Near-Freeze L3!)
+- **Throw**: Release RMB while holding projectile
+- **Punch**: Left Mouse Button (melee attack)
+- **Suck**: `F` (vampire mechanic on critical enemies - look for pink pulsing indicator)
 - **Restart**: `R`
+
+**Note**: Catch only works when time shows "Near-Freeze L3" - press Q twice to reach it!
 
 ---
 
@@ -54,6 +58,30 @@ We only want to answer one question:
    - Add `SimpleTurret` (drag-and-drop) to any object (a cylinder works).  
    - Leave `Projectile Prefab` empty to auto-use a runtime cube projectile.  
    - Tune: `interval`, `muzzleSpeed`, `burstCount`, `spreadAngle`.
+
+4. **Health Bars (optional)**
+   - Add `AutoHealthBar` component to turrets/enemies to automatically create world-space health bars.
+   - Health bars fade when full and show color-coded health status (green/yellow/red).
+
+5. **Melee Combat**
+   - Add `MeleeCombat` component to player for punch attacks.
+   - Default: Left Mouse Button to punch, configurable range and damage.
+
+6. **Doomed Enemy Tagging & Critical Status**
+   - Add `DoomedTag` component to turrets/enemies to enable visual feedback.
+   - **Orange glow**: Enemy will be destroyed by incoming projectile/melee attack
+   - **Pink pulsing sphere**: Enemy is at critical health and can be drained for HP
+   - Automatically updates based on health percentage
+
+7. **Trajectory Visualization**
+   - Automatically created by `CatchAndThrow` component when holding projectiles
+   - Shows predicted path with impact point marker
+   - Helps plan throws in slow-motion
+
+8. **Turning Crosshair**
+   - Add `TurningCrosshair` component to turrets for firing cadence feedback
+   - Automatically syncs with turret firing intervals
+   - Color-coded visual feedback for timing
 
 ---
 
@@ -91,38 +119,41 @@ We only want to answer one question:
 - **Time Dilation Bar**: Fills linearly over time, drains when time dilation active (faster drain at deeper slow levels)
 - **Player Health**: Degenerates over time, recharged by "sucking" enemies at critical health
 - **Turret Health**: Turrets can be destroyed by thrown projectiles
+- **Health Bar HUD**: World-space health bars for turrets and enemies that fade when full/dead
+- **Melee Combat**: Simple punch system (Left Mouse Button) with range detection, damage, and knockback
+  - Marks enemies as doomed when dealing lethal damage
+- **Doomed Enemy Tagging**: Enemies marked with visual feedback (orange glow) when targeted by lethal attacks
+  - Works with thrown projectiles and melee attacks
+  - Prevents wasting resources on already-doomed enemies
+- **Critical Status Indicators**: Enemies show pulsing pink indicator when at critical health (drainable)
+  - Helps players identify which enemies can be drained for HP
+- **Trajectory Indicators**: Ray visualization showing projectile path when holding caught projectiles
+  - Shows predicted impact point
+  - Helps plan throws in slow-motion
+- **Turning Crosshair**: Visual turret firing cadence feedback
+  - Spins while charging, locks when ready to fire
+  - Color-coded: Red (just fired) → Yellow (charging) → Green (ready)
 
 ### Visual Feedback (Planned)
-1. **Turning Crosshair**: After turret fires, crosshair spins; when locked, turret fires again
-2. **Trajectory Indicators**: 
-   - Blast radius visualization for grenades
-   - Ray visualization for bullets (shows trajectory before firing)
-3. **Sonic Boom**: 
-   - Stopping at max speed in slowest time dilation creates sonic boom
-   - Damages player unless enemy is between player and boom origin
+1. **Sonic Boom**: 
+   - moving at max speed in slowest time dilation creates sonic boom "wake" behind player
+   - Damages player when player stops moving unless enemy is between player and boom wake or the player decelerates gently
    - Can be used strategically to defeat enemies
    - Requires visual feedback (shockwave effect)
-4. **Melee Combat**:
+4. **Advanced Melee Combat**:
    - Rechargeable "Audio Pulse" hyper strike
    - Charges with movement (faster movement = faster recharge)
-5. **Vampire Mechanics**:
-   - Health degenerates over time (encourages aggression)
-   - "Suck" enemies at critical health to restore health
-   - Gibbing enemies gives less health/blood back
-   - Encourages precision over brute force
-6. **Doomed Enemy Tagging**:
-   - When player throws projectile/object that will eventually destroy enemy
-   - Enemy is visually tagged (outline, skull icon, color change, etc.)
-   - Prevents player from wasting time/resources on already-doomed enemies
-   - Applies to: thrown bullets, physics objects, sonic boom victims
-   - Tag persists until enemy is destroyed
+   - Could enhance existing punch system
+5. **Wall Walking**
+   - When player is in maximum time dilation, player can walk along a wall's surface if they choose to
 
 ### Design Philosophy: Push-Forward Combat
-Systems 4 and 5 create a "push-forward" mentality:
+The implemented systems create a "push-forward" mentality:
 - Health degeneration prevents camping
-- Movement-based recharge rewards aggression
-- Vampire mechanics require close-range engagement
-- Sonic boom can be weaponized with positioning
+- Vampire mechanics require close-range engagement with critical enemies
+- Melee combat provides immediate damage option
+- Doomed tagging prevents wasting resources on already-defeated enemies
+- Time dilation resource management encourages strategic aggression
 
 ---
 

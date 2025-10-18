@@ -38,7 +38,7 @@ namespace Warspite.Systems
         {
             if (timeController == null)
             {
-                timeController = FindObjectOfType<TimeDilationController>();
+                timeController = FindFirstObjectByType<TimeDilationController>();
             }
         }
 
