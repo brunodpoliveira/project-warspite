@@ -15,6 +15,7 @@ namespace Warspite.Systems
         [SerializeField] private TimeDilationResource timeResource;
         [SerializeField] private MomentumLocomotion momentum;
         [SerializeField] private Health playerHealth;
+        [SerializeField] private AudioPulse audioPulse;
 
         [Header("Display")]
         [SerializeField] private bool showHUD = true;
@@ -66,6 +67,20 @@ namespace Warspite.Systems
                 yOffset += 25;
             }
 
+            // Audio Pulse Charge
+            if (audioPulse != null)
+            {
+                string pulseStatus = audioPulse.IsFullyCharged ? "READY!" : "Charging...";
+                string pulseText = $"Audio Pulse: {audioPulse.CurrentCharge:F0}/{audioPulse.MaxCharge:F0} ({pulseStatus})";
+                
+                // Change color based on charge status
+                Color originalColor = style.normal.textColor;
+                style.normal.textColor = audioPulse.IsFullyCharged ? Color.cyan : Color.yellow;
+                GUI.Label(new Rect(20, yOffset, 280, 25), pulseText, style);
+                style.normal.textColor = originalColor;
+                yOffset += 25;
+            }
+
             // Time Level
             if (timeController != null)
             {
@@ -97,7 +112,7 @@ namespace Warspite.Systems
             // Controls hint
             style.fontSize = 12;
             style.fontStyle = FontStyle.Normal;
-            GUI.Label(new Rect(20, yOffset, 280, 20), "Q/E: Time | F: Suck | ESC: Cursor | F1: HUD", style);
+            GUI.Label(new Rect(20, yOffset, 280, 20), "Q/E: Time | F: Suck | M2: Pulse | F1: HUD", style);
         }
 
         private void UpdateFPS()

@@ -17,6 +17,7 @@ namespace Warspite.Player
         [SerializeField] private TimeDilationController timeController;
         [SerializeField] private PlayerHealth playerHealth;
         [SerializeField] private Transform handAnchor;
+        [SerializeField] private AudioPulse audioPulse;
 
         [Header("Melee Settings")]
         [SerializeField] private float punchRange = 2f;
@@ -64,6 +65,9 @@ namespace Warspite.Player
             
             if (playerHealth == null)
                 playerHealth = GetComponent<PlayerHealth>();
+            
+            if (audioPulse == null)
+                audioPulse = GetComponent<AudioPulse>();
 
             // Create hand anchor if not assigned
             if (handAnchor == null)

@@ -880,6 +880,7 @@ MonoBehaviour:
   timeResource: {fileID: 1202316786}
   momentum: {fileID: 1479757055}
   playerHealth: {fileID: 1479757057}
+  audioPulse: {fileID: 1479757060}
   showHUD: 1
   toggleKey: 282
 --- !u!114 &1202316785
@@ -921,6 +922,271 @@ MonoBehaviour:
   level2Drain: 10
   level3Drain: 25
   timeController: {fileID: 1202316785}
+--- !u!1 &1213425911
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1213425922}
+  - component: {fileID: 1213425921}
+  - component: {fileID: 1213425920}
+  - component: {fileID: 1213425919}
+  - component: {fileID: 1213425918}
+  - component: {fileID: 1213425917}
+  - component: {fileID: 1213425916}
+  - component: {fileID: 1213425915}
+  - component: {fileID: 1213425914}
+  - component: {fileID: 1213425913}
+  - component: {fileID: 1213425912}
+  m_Layer: 0
+  m_Name: Turret (2)
+  m_TagString: Enemy
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1213425912
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213425911}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80daad39b0e1f614bb2756eff60e48d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.UI.AutoHealthBar
+  offset: {x: 0, y: 2, z: 0}
+  size: {x: 1, y: 0.1}
+  createOnStart: 1
+  healthBarPrefab: {fileID: 0}
+--- !u!114 &1213425913
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213425911}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c178683b77c521c4d99f5744bb9dda08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.UI.TurningCrosshair
+  turret: {fileID: 1213425918}
+  crosshairTransform: {fileID: 0}
+  spinSpeed: 360
+  readyColor: {r: 0, g: 1, b: 0, a: 1}
+  chargingColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  firingColor: {r: 1, g: 0, b: 0, a: 1}
+  crosshairSize: 50
+  offset: {x: 0, y: 3, z: 0}
+  worldSpace: 1
+--- !u!114 &1213425914
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213425911}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 922ec476ca5f648418b2931ccd52c4c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.World.DoomedTag
+  doomedColor: {r: 1, g: 0.5, b: 0, a: 0.8}
+  useColorOverlay: 1
+  showSkullIcon: 1
+  criticalColor: {r: 1, g: 0, b: 0.5, a: 0.8}
+  showCriticalIndicator: 1
+  criticalThreshold: 0.25
+  maxTagDuration: 10
+--- !u!54 &1213425915
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213425911}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &1213425916
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213425911}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfd9788d6bde5b04d97daeb0d8225f2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.World.TurretHealth
+  projectileDamage: 50
+  disableTurretOnDeath: 1
+--- !u!114 &1213425917
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213425911}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 015d6a74f70e33d49933df58e71e1dfd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.Core.Health
+  maxHealth: 100
+  currentHealth: 0
+  destroyOnDeath: 1
+  destroyDelay: 0
+  OnDamaged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHealed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &1213425918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213425911}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cce2269e2cf24749afb91eeca8df3eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.World.SimpleTurret
+  projectilePrefab: {fileID: 0}
+  projectileSize: 0.2
+  interval: 1
+  muzzleSpeed: 20
+  burstCount: 1
+  burstDelay: 0.1
+  spreadAngle: 0
+  target: {fileID: 1479757053}
+  trackTarget: 1
+  muzzlePoint: {fileID: 0}
+  crosshair: {fileID: 0}
+--- !u!136 &1213425919
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213425911}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5000001
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
+--- !u!23 &1213425920
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213425911}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1213425921
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213425911}
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &1213425922
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213425911}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 40.93, y: 1.11, z: 3.23}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1327701600
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1081,6 +1347,7 @@ GameObject:
   - component: {fileID: 1479757057}
   - component: {fileID: 1479757058}
   - component: {fileID: 1479757059}
+  - component: {fileID: 1479757060}
   m_Layer: 0
   m_Name: PlayerObject
   m_TagString: Player
@@ -1221,6 +1488,7 @@ MonoBehaviour:
   timeController: {fileID: 1202316785}
   playerHealth: {fileID: 1479757058}
   handAnchor: {fileID: 1952324621}
+  audioPulse: {fileID: 0}
   punchRange: 2
   punchRadius: 1
   punchDamage: 25
@@ -1237,6 +1505,32 @@ MonoBehaviour:
   catchKey: 324
   vampireKey: 102
   showDebugGizmos: 1
+--- !u!114 &1479757060
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1479757051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 481b4d0b941396f438352c1838a3f0b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.Player.AudioPulse
+  locomotion: {fileID: 1479757055}
+  maxCharge: 100
+  chargePerMeterMoved: 2
+  minSpeedForCharge: 1
+  passiveChargeRate: 5
+  enablePassiveCharge: 0
+  pulseRange: 10
+  pulseDamage: 100
+  pulseKnockback: 50
+  pulseCooldown: 1
+  pulseKey: 325
+  showDebugGizmos: 1
+  chargedColor: {r: 0, g: 1, b: 1, a: 1}
+  chargingColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!108 &1685010353
 Light:
   m_ObjectHideFlags: 0
@@ -1534,7 +1828,7 @@ Transform:
   m_GameObject: {fileID: 1860185437}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 26.29, y: 1.11, z: 8.2204}
+  m_LocalPosition: {x: 26.29, y: 1.11, z: -5.11}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1725,6 +2019,271 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1479757053}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2008654456
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2008654467}
+  - component: {fileID: 2008654466}
+  - component: {fileID: 2008654465}
+  - component: {fileID: 2008654464}
+  - component: {fileID: 2008654463}
+  - component: {fileID: 2008654462}
+  - component: {fileID: 2008654461}
+  - component: {fileID: 2008654460}
+  - component: {fileID: 2008654459}
+  - component: {fileID: 2008654458}
+  - component: {fileID: 2008654457}
+  m_Layer: 0
+  m_Name: Turret (1)
+  m_TagString: Enemy
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2008654457
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2008654456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80daad39b0e1f614bb2756eff60e48d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.UI.AutoHealthBar
+  offset: {x: 0, y: 2, z: 0}
+  size: {x: 1, y: 0.1}
+  createOnStart: 1
+  healthBarPrefab: {fileID: 0}
+--- !u!114 &2008654458
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2008654456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c178683b77c521c4d99f5744bb9dda08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.UI.TurningCrosshair
+  turret: {fileID: 2008654463}
+  crosshairTransform: {fileID: 0}
+  spinSpeed: 360
+  readyColor: {r: 0, g: 1, b: 0, a: 1}
+  chargingColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  firingColor: {r: 1, g: 0, b: 0, a: 1}
+  crosshairSize: 50
+  offset: {x: 0, y: 3, z: 0}
+  worldSpace: 1
+--- !u!114 &2008654459
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2008654456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 922ec476ca5f648418b2931ccd52c4c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.World.DoomedTag
+  doomedColor: {r: 1, g: 0.5, b: 0, a: 0.8}
+  useColorOverlay: 1
+  showSkullIcon: 1
+  criticalColor: {r: 1, g: 0, b: 0.5, a: 0.8}
+  showCriticalIndicator: 1
+  criticalThreshold: 0.25
+  maxTagDuration: 10
+--- !u!54 &2008654460
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2008654456}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &2008654461
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2008654456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfd9788d6bde5b04d97daeb0d8225f2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.World.TurretHealth
+  projectileDamage: 50
+  disableTurretOnDeath: 1
+--- !u!114 &2008654462
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2008654456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 015d6a74f70e33d49933df58e71e1dfd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.Core.Health
+  maxHealth: 100
+  currentHealth: 0
+  destroyOnDeath: 1
+  destroyDelay: 0
+  OnDamaged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHealed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &2008654463
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2008654456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cce2269e2cf24749afb91eeca8df3eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.World.SimpleTurret
+  projectilePrefab: {fileID: 0}
+  projectileSize: 0.2
+  interval: 1
+  muzzleSpeed: 20
+  burstCount: 1
+  burstDelay: 0.1
+  spreadAngle: 0
+  target: {fileID: 1479757053}
+  trackTarget: 1
+  muzzlePoint: {fileID: 0}
+  crosshair: {fileID: 0}
+--- !u!136 &2008654464
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2008654456}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5000001
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
+--- !u!23 &2008654465
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2008654456}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &2008654466
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2008654456}
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &2008654467
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2008654456}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 11.91, y: 1.11, z: 0.98}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1732,6 +2291,8 @@ SceneRoots:
   - {fileID: 1690282357}
   - {fileID: 1202316783}
   - {fileID: 1860185444}
+  - {fileID: 2008654467}
+  - {fileID: 1213425922}
   - {fileID: 736015647}
   - {fileID: 1479757053}
   - {fileID: 989672809}

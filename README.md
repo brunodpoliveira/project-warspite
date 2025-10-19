@@ -37,6 +37,7 @@ We only want to answer one question:
 - **Catch (L3 only)**: Hold Right Mouse Button near a bullet (must be in Near-Freeze L3!)
 - **Throw**: Release RMB while holding projectile
 - **Punch**: Left Mouse Button (melee attack)
+- **Audio Pulse**: Middle Mouse Button (rechargeable hyper strike - charges with movement)
 - **Suck**: `F` (vampire mechanic on critical enemies - look for pink pulsing indicator)
 - **Restart**: `R`
 
@@ -82,6 +83,13 @@ We only want to answer one question:
    - Add `TurningCrosshair` component to turrets for firing cadence feedback
    - Automatically syncs with turret firing intervals
    - Color-coded visual feedback for timing
+
+9. **Audio Pulse (Advanced Melee)**
+   - Add `AudioPulse` component to player for rechargeable hyper strike
+   - Charges automatically as player moves (faster movement = faster charge)
+   - Default: Middle Mouse Button to fire when fully charged
+   - Wide cone AOE attack with high damage and knockback
+   - Charge meter displayed in DebugHUD (cyan when ready)
 
 ---
 
@@ -133,6 +141,12 @@ We only want to answer one question:
 - **Turning Crosshair**: Visual turret firing cadence feedback
   - Spins while charging, locks when ready to fire
   - Color-coded: Red (just fired) → Yellow (charging) → Green (ready)
+- **Audio Pulse (Advanced Melee)**: Rechargeable hyper strike that charges with movement
+  - Charges automatically as player moves (faster movement = faster charge)
+  - Wide cone AOE attack with high damage and knockback
+  - Middle Mouse Button to fire when fully charged
+  - Charge meter displayed in DebugHUD with color-coded status
+  - Encourages aggressive, mobile playstyle
 
 ### Visual Feedback (Planned)
 1. **Sonic Boom**: 
@@ -140,11 +154,7 @@ We only want to answer one question:
    - Damages player when player stops moving unless enemy is between player and boom wake or the player decelerates gently
    - Can be used strategically to defeat enemies
    - Requires visual feedback (shockwave effect)
-4. **Advanced Melee Combat**:
-   - Rechargeable "Audio Pulse" hyper strike
-   - Charges with movement (faster movement = faster recharge)
-   - Could enhance existing punch system
-5. **Wall Walking**
+2. **Wall Walking**
    - When player is in maximum time dilation, player can walk along a wall's surface if they choose to
 
 ### Design Philosophy: Push-Forward Combat
@@ -152,6 +162,7 @@ The implemented systems create a "push-forward" mentality:
 - Health degeneration prevents camping
 - Vampire mechanics require close-range engagement with critical enemies
 - Melee combat provides immediate damage option
+- Audio Pulse rewards constant movement with powerful attacks
 - Doomed tagging prevents wasting resources on already-defeated enemies
 - Time dilation resource management encourages strategic aggression
 
@@ -163,3 +174,143 @@ The implemented systems create a "push-forward" mentality:
 - AI behavior and combat balance
 - Save systems, menus, or meta progression
 - Networked play
+
+---
+
+## Animation Integration Insights (For Future Iterations)
+
+### Why Third-Party Controllers Fail with Time Dilation
+- **Global `Time.timeScale` breaks third-party controllers** that assume normal time flow
+- **Root motion animations** become desynchronized when time scales change
+- **Built-in animation state machines** don't compensate for time manipulation
+
+### Animation Architecture for Time Dilation Games
+
+#### 1. Separate Animation Time from Game Time
+```csharp
+// Core principle: Animations run on UNSCALED time
+animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+```
+**Why**: Player animations must stay fluid at real-time speed while world slows down.
+
+#### 2. Manual Animation Speed Control
+Instead of relying on `Time.timeScale`:
+```csharp
+// On player animator
+animator.speed = 1.0f; // Always real-time
+
+// On world entities (enemies, props)
+animator.speed = currentTimeDilationFactor; // 0.1x to 1.0x
+```
+
+#### 3. Velocity-Driven Animation (Not Time-Driven)
+```csharp
+// Blend tree parameters based on actual movement
+float velocityMagnitude = characterController.velocity.magnitude;
+animator.SetFloat("Speed", velocityMagnitude);
+animator.SetFloat("DirectionX", localVelocity.x);
+animator.SetFloat("DirectionZ", localVelocity.z);
+```
+**Benefit**: Animations automatically match momentum-based locomotion.
+
+### Recommended Animation Setup
+
+#### Player Character
+1. **Blend Tree Structure**:
+   - Idle (0 velocity)
+   - Walk (low velocity)
+   - Run (medium velocity)
+   - Sprint (high velocity)
+   - Directional strafing (based on local velocity X/Z)
+
+2. **Layer Setup**:
+   - **Base Layer**: Locomotion blend tree
+   - **Upper Body Layer**: Aiming/shooting (additive)
+   - **Action Layer**: Melee attacks, catching projectiles (override)
+
+3. **Key Parameters**:
+   ```csharp
+   animator.SetFloat("VelocityMagnitude", velocity.magnitude);
+   animator.SetFloat("StrafeX", localVelocity.x);
+   animator.SetFloat("StrafeZ", localVelocity.z);
+   animator.SetBool("IsGrounded", isGrounded);
+   animator.SetTrigger("Punch"); // For melee
+   animator.SetTrigger("Catch"); // For projectile catch
+   ```
+
+#### Enemy/Turret Animations
+```csharp
+// Turrets: Simple rotation + firing animation
+animator.speed = TimeDilationController.CurrentTimeFactor;
+animator.SetTrigger("Fire");
+
+// Enemies: Full locomotion affected by time
+animator.speed = TimeDilationController.CurrentTimeFactor;
+```
+
+### Integration with Current Systems
+
+#### MomentumLocomotion + Animation
+```csharp
+// In MomentumLocomotion.cs (hypothetical addition)
+void UpdateAnimator()
+{
+    if (animator == null) return;
+    
+    Vector3 localVel = transform.InverseTransformDirection(velocity);
+    
+    animator.SetFloat("VelocityMagnitude", velocity.magnitude);
+    animator.SetFloat("VelocityX", localVel.x);
+    animator.SetFloat("VelocityZ", localVel.z);
+}
+```
+
+#### MeleeCombat + Animation
+```csharp
+// In MeleeCombat.cs
+void PerformPunch()
+{
+    animator?.SetTrigger("Punch");
+    // Existing punch logic...
+}
+```
+
+#### CatchAndThrow + Animation
+```csharp
+// Catching
+animator?.SetBool("HoldingProjectile", true);
+animator?.SetTrigger("Catch");
+
+// Throwing
+animator?.SetTrigger("Throw");
+animator?.SetBool("HoldingProjectile", false);
+```
+
+### Asset Recommendations
+
+#### Free Options
+- **Mixamo**: Humanoid animations, auto-rigging
+- **Unity Asset Store**: "Basic Motions FREE" by Kevin Iglesias
+- **Quaternius**: Low-poly characters with animations
+
+#### Paid (High Quality)
+- **Motion Matching**: For ultra-responsive movement
+- **Kinematic Character Controller** by Philippe St-Amand (supports custom time)
+
+### Critical Lessons from This Prototype
+
+1. **Keep animation separate from physics**: `CharacterController` velocity should drive animation, not vice versa
+2. **Unscaled time for player, scaled for world**: Maintains responsiveness
+3. **IK is optional**: For fast-paced games, full-body IK might be overkill
+4. **Procedural animation**: Consider procedural head-look, aim offset, or foot IK only if it adds to the fantasy
+
+### Migration Path for Next Iteration
+
+1. Start with capsule + basic animator (like current project)
+2. Add simple idle/walk/run blend tree
+3. Hook velocity to blend tree parameters
+4. Test time dilation with `animator.speed` scaling
+5. Add action layers (melee, catch, throw)
+6. Polish with IK/procedural if needed
+
+**Key Takeaway**: Momentum-based systems are ideal for animation because velocity naturally drives blend trees. The main challenge is keeping player animations unscaled while world animations scale with time dilation.
