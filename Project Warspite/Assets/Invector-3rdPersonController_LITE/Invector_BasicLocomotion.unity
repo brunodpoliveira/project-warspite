@@ -1348,6 +1348,7 @@ GameObject:
   - component: {fileID: 1479757058}
   - component: {fileID: 1479757059}
   - component: {fileID: 1479757060}
+  - component: {fileID: 1479757061}
   m_Layer: 0
   m_Name: PlayerObject
   m_TagString: Player
@@ -1529,8 +1530,39 @@ MonoBehaviour:
   pulseCooldown: 1
   pulseKey: 325
   showDebugGizmos: 1
+  showConeIndicator: 1
   chargedColor: {r: 0, g: 1, b: 1, a: 1}
   chargingColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  coneSegments: 16
+--- !u!114 &1479757061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1479757051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d2944b1c50f3aa4698c2367e1533fb3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.Player.SonicBoom
+  locomotion: {fileID: 0}
+  timeController: {fileID: 0}
+  playerHealth: {fileID: 0}
+  minSpeedForBoom: 8
+  requireDeepestSlow: 1
+  wakeLifetime: 2
+  wakeTrailDistance: 3
+  wakeRadius: 2
+  playerDamageOnStop: 30
+  enemyDamageFromBoom: 50
+  suddenStopThreshold: 0.3
+  gentleDecelerationTime: 0.5
+  showDebugGizmos: 1
+  spawnShockwaveEffect: 1
+  wakeColor: {r: 1, g: 0.5, b: 0, a: 0.5}
+  dangerColor: {r: 1, g: 0, b: 0, a: 0.7}
+  shockwaveColor: {r: 0.5, g: 0.8, b: 1, a: 0.8}
 --- !u!108 &1685010353
 Light:
   m_ObjectHideFlags: 0

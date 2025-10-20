@@ -91,6 +91,16 @@ We only want to answer one question:
    - Wide cone AOE attack with high damage and knockback
    - Charge meter displayed in DebugHUD (cyan when ready)
 
+10. **Sonic Boom (High-Speed Wake)**
+   - Add `SonicBoom` component to player for dangerous speed mechanics
+   - Creates persistent trailing wake sphere that follows player at high speed in L3 time dilation
+   - Wake continuously damages anything it touches (50 damage/second)
+   - If player slows down, wake catches up and damages player
+   - **Bleedover period**: Wake persists for 1.5s after dropping below speed threshold (prevents exploit)
+   - **Auto-dissipation**: Wake fades and disappears after 3 seconds of existence
+   - Visual feedback: Fades to red during bleedover, shrinks as it dissipates
+   - Risk/reward: speed = safety, slowing down = danger
+
 ---
 
 ## Time Dilation Implementation Options 
@@ -147,14 +157,20 @@ We only want to answer one question:
   - Middle Mouse Button to fire when fully charged
   - Charge meter displayed in DebugHUD with color-coded status
   - Encourages aggressive, mobile playstyle
+- **Sonic Boom (High-Speed Wake)**: Dangerous trailing wake created at high speeds
+  - Activates when moving fast (8+ m/s) in deepest time dilation (L3)
+  - Persistent wake sphere follows player, trying to catch up
+  - Wake continuously damages anything it touches (50 damage/second in 0.5s ticks)
+  - Player must maintain speed or wake catches up and damages them
+  - **Bleedover mechanic**: Wake persists 1.5s after speed drops (prevents toggling exploit)
+  - **Dissipation system**: Wake auto-fades after 3s max lifetime
+  - Visual feedback: Orange → Red (bleedover) → Fades out (dissipation)
+  - Semi-transparent sphere shrinks as it dissipates
+  - Strategic gameplay: maintain speed, use enemies as obstacles, plan movement carefully
+  - Risk/reward: speed = safety, slowing down = danger
 
 ### Visual Feedback (Planned)
-1. **Sonic Boom**: 
-   - moving at max speed in slowest time dilation creates sonic boom "wake" behind player
-   - Damages player when player stops moving unless enemy is between player and boom wake or the player decelerates gently
-   - Can be used strategically to defeat enemies
-   - Requires visual feedback (shockwave effect)
-2. **Wall Walking**
+1. **Wall Walking**
    - When player is in maximum time dilation, player can walk along a wall's surface if they choose to
 
 ### Design Philosophy: Push-Forward Combat
@@ -163,6 +179,7 @@ The implemented systems create a "push-forward" mentality:
 - Vampire mechanics require close-range engagement with critical enemies
 - Melee combat provides immediate damage option
 - Audio Pulse rewards constant movement with powerful attacks
+- Sonic Boom adds risk/reward to high-speed movement and strategic positioning
 - Doomed tagging prevents wasting resources on already-defeated enemies
 - Time dilation resource management encourages strategic aggression
 
