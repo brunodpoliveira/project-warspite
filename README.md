@@ -91,15 +91,16 @@ We only want to answer one question:
    - Wide cone AOE attack with high damage and knockback
    - Charge meter displayed in DebugHUD (cyan when ready)
 
-10. **Sonic Boom (High-Speed Wake)**
+10. **Sonic Boom (High-Speed Wake Trail)**
    - Add `SonicBoom` component to player for dangerous speed mechanics
-   - Creates persistent trailing wake sphere that follows player at high speed in L3 time dilation
-   - Wake continuously damages anything it touches (50 damage/second)
-   - If player slows down, wake catches up and damages player
-   - **Bleedover period**: Wake persists for 1.5s after dropping below speed threshold (prevents exploit)
-   - **Auto-dissipation**: Wake fades and disappears after 3 seconds of existence
-   - Visual feedback: Fades to red during bleedover, shrinks as it dissipates
-   - Risk/reward: speed = safety, slowing down = danger
+   - Creates **trail of wake segments** along entire high-speed path (like jet contrail)
+   - New segment spawned every 0.5m traveled at high speed
+   - Each segment damages anything it touches (50 damage/second)
+   - **Trail tunnel concept**: Player at front, boom at back, damage throughout
+   - **Bleedover period**: Trail continues for 1.5s after dropping below speed threshold
+   - **Auto-dissipation**: Each segment fades after 2 seconds of existence
+   - Visual feedback: Orange trail → Red during bleedover → Fades out
+   - Risk/reward: leaves dangerous path behind, enemies can be caught in trail
 
 ---
 
@@ -157,17 +158,18 @@ We only want to answer one question:
   - Middle Mouse Button to fire when fully charged
   - Charge meter displayed in DebugHUD with color-coded status
   - Encourages aggressive, mobile playstyle
-- **Sonic Boom (High-Speed Wake)**: Dangerous trailing wake created at high speeds
+- **Sonic Boom (High-Speed Wake Trail)**: Dangerous trail marking player's high-speed path
   - Activates when moving fast (8+ m/s) in deepest time dilation (L3)
-  - Persistent wake sphere follows player, trying to catch up
-  - Wake continuously damages anything it touches (50 damage/second in 0.5s ticks)
-  - Player must maintain speed or wake catches up and damages them
-  - **Bleedover mechanic**: Wake persists 1.5s after speed drops (prevents toggling exploit)
-  - **Dissipation system**: Wake auto-fades after 3s max lifetime
-  - Visual feedback: Orange → Red (bleedover) → Fades out (dissipation)
-  - Semi-transparent sphere shrinks as it dissipates
-  - Strategic gameplay: maintain speed, use enemies as obstacles, plan movement carefully
-  - Risk/reward: speed = safety, slowing down = danger
+  - Creates trail of wake segments (one every 0.5m traveled)
+  - Each segment is a damaging sphere (2m radius, 50 damage/second in 0.5s ticks)
+  - **Trail tunnel concept**: Entire path becomes dangerous zone
+  - Player leaves trail behind like jet contrail
+  - Enemies caught in trail path take continuous damage
+  - **Bleedover mechanic**: Trail continues 1.5s after speed drops (prevents toggling exploit)
+  - **Segment dissipation**: Each segment fades after 2s lifetime
+  - Visual feedback: Orange trail → Red (bleedover) → Fades and shrinks
+  - Strategic gameplay: plan routes carefully, use trail to damage enemies, avoid backtracking
+  - Risk/reward: creates area denial, but can trap player if not careful
 
 ### Visual Feedback (Planned)
 1. **Wall Walking**

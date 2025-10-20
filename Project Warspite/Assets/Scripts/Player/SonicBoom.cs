@@ -23,11 +23,9 @@ namespace Warspite.Player
         [SerializeField] private bool requireDeepestSlow = true; // Only in L3 time dilation
 
         [Header("Wake Settings")]
-        [SerializeField] private float wakeTrailDistance = 5f; // Distance behind player
         [SerializeField] private float wakeRadius = 2f; // Radius of wake damage sphere
-        [SerializeField] private float wakeMoveSpeed = 8f; // How fast wake follows player
-        [SerializeField] private float wakeUpdateInterval = 0.1f; // How often to check for damage
-        [SerializeField] private float maxWakeLifetime = 3f; // Max time wake persists after creation
+        [SerializeField] private float segmentSpacing = 0.5f; // Distance between wake segments
+        [SerializeField] private float segmentLifetime = 2f; // How long each segment persists
         [SerializeField] private float bleedoverDuration = 1.5f; // Time wake persists after dropping below speed threshold
 
         [Header("Damage Settings")]
@@ -41,19 +39,26 @@ namespace Warspite.Player
         [SerializeField] private Color dangerColor = new Color(1f, 0f, 0f, 0.7f); // Red
         [SerializeField] private Color shockwaveColor = new Color(0.5f, 0.8f, 1f, 0.8f); // Cyan
 
+        // Wake segment class to track individual trail pieces
+        private class WakeSegment
+        {
+            public Vector3 position;
+            public float creationTime;
+            public GameObject visualObject;
+            public bool isBleedover; // Created during bleedover period
+        }
+
         private bool hasBoomActive = false;
-        private GameObject wakeObject;
-        private Vector3 wakePosition;
-        private float lastDamageTime;
-        private float wakeCreationTime;
-        private float wakeDistanceTraveled;
+        private System.Collections.Generic.List<WakeSegment> wakeSegments = new System.Collections.Generic.List<WakeSegment>();
+        private Vector3 lastSegmentPosition;
+        private float distanceSinceLastSegment;
         private float speedDroppedBelowThresholdTime;
         private bool isInBleedover = false;
         private System.Collections.Generic.Dictionary<GameObject, float> lastDamageTimes = new System.Collections.Generic.Dictionary<GameObject, float>();
 
         // Public properties
         public bool HasActiveBoom => hasBoomActive;
-        public Vector3 WakePosition => wakePosition;
+        public int WakeSegmentCount => wakeSegments.Count;
 
         void Start()
         {
@@ -78,15 +83,17 @@ namespace Warspite.Player
 
             if (meetsConditions && meetsSpeedThreshold)
             {
-                // Create or update boom wake
+                // Activate boom if not active
                 if (!hasBoomActive)
                 {
-                    CreateBoomWake();
+                    hasBoomActive = true;
+                    lastSegmentPosition = transform.position;
+                    distanceSinceLastSegment = 0f;
+                    Debug.Log("Sonic boom activated!");
                 }
-                else
-                {
-                    UpdateBoomWake();
-                }
+                
+                // Create trail segments as player moves
+                CreateTrailSegments(false);
                 
                 // Reset bleedover tracking
                 isInBleedover = false;
@@ -108,35 +115,29 @@ namespace Warspite.Player
                     float bleedoverElapsed = Time.time - speedDroppedBelowThresholdTime;
                     if (bleedoverElapsed >= bleedoverDuration)
                     {
-                        DeactivateBoom();
+                        // Stop creating new segments, but keep existing ones
+                        hasBoomActive = false;
+                        isInBleedover = false;
+                        Debug.Log("Sonic boom bleedover ended");
                     }
                     else
                     {
-                        // Continue updating wake during bleedover
-                        UpdateBoomWake();
+                        // Continue creating segments during bleedover (player's last position)
+                        CreateTrailSegments(true);
                     }
-                }
-                
-                // Check if wake has exceeded max lifetime
-                float wakeAge = Time.time - wakeCreationTime;
-                if (wakeAge >= maxWakeLifetime)
-                {
-                    Debug.Log("Sonic boom dissipated (max lifetime reached)");
-                    DeactivateBoom();
                 }
             }
 
-            // Check for damage from wake
-            if (hasBoomActive)
+            // Update and clean up segments
+            UpdateWakeSegments();
+            
+            // Check for damage from all wake segments
+            CheckWakeDamage();
+            
+            // Draw visual indicators
+            if (showDebugGizmos)
             {
-                CheckWakeDamage();
-                UpdateWakeVisuals();
-                
-                // Draw visual indicator
-                if (showDebugGizmos)
-                {
-                    DrawWakeIndicator();
-                }
+                DrawWakeIndicator();
             }
         }
 
@@ -160,226 +161,217 @@ namespace Warspite.Player
             return true;
         }
 
-        private void CreateBoomWake()
+        private void CreateTrailSegments(bool isBleedoverSegment)
         {
-            hasBoomActive = true;
-            wakeCreationTime = Time.time;
-            wakeDistanceTraveled = 0f;
-            isInBleedover = false;
-            
-            // Calculate initial wake position behind player
-            Vector3 velocity = locomotion.Velocity;
-            Vector3 direction = velocity.magnitude > 0.1f ? velocity.normalized : -transform.forward;
-            wakePosition = transform.position - direction * wakeTrailDistance;
+            // Track distance traveled since last segment
+            Vector3 currentPosition = transform.position;
+            float distanceMoved = Vector3.Distance(lastSegmentPosition, currentPosition);
+            distanceSinceLastSegment += distanceMoved;
 
-            // Create wake object for visualization
-            if (wakeObject == null)
+            // Create new segment if we've moved far enough
+            if (distanceSinceLastSegment >= segmentSpacing)
             {
-                wakeObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                wakeObject.name = "SonicBoomWake";
-                wakeObject.transform.localScale = Vector3.one * wakeRadius * 2f;
-                
-                // Make it semi-transparent
-                Renderer renderer = wakeObject.GetComponent<Renderer>();
-                if (renderer != null)
+                WakeSegment segment = new WakeSegment
                 {
-                    Material mat = new Material(Shader.Find("Standard"));
-                    mat.color = wakeColor;
-                    mat.SetFloat("_Mode", 3); // Transparent mode
-                    mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                    mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                    mat.SetInt("_ZWrite", 0);
-                    mat.DisableKeyword("_ALPHATEST_ON");
-                    mat.EnableKeyword("_ALPHABLEND_ON");
-                    mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                    mat.renderQueue = 3000;
-                    renderer.material = mat;
-                }
-                
-                // Remove collider so it doesn't interfere with physics
-                Collider col = wakeObject.GetComponent<Collider>();
-                if (col != null) Destroy(col);
-            }
-            
-            wakeObject.transform.position = wakePosition;
-            wakeObject.SetActive(true);
+                    position = lastSegmentPosition,
+                    creationTime = Time.time,
+                    isBleedover = isBleedoverSegment,
+                    visualObject = CreateSegmentVisual(lastSegmentPosition, isBleedoverSegment)
+                };
 
-            // Spawn visual effect
-            if (spawnShockwaveEffect)
-            {
-                ShockwaveEffect.SpawnShockwave(wakePosition, wakeColor, wakeRadius * 1.5f);
+                wakeSegments.Add(segment);
+                distanceSinceLastSegment = 0f;
             }
 
-            Debug.Log("Sonic Boom wake created!");
+            lastSegmentPosition = currentPosition;
         }
 
-        private void UpdateBoomWake()
+        private GameObject CreateSegmentVisual(Vector3 position, bool isBleedover)
         {
-            // Calculate target position behind player
-            Vector3 velocity = locomotion.Velocity;
-            Vector3 direction = velocity.magnitude > 0.1f ? velocity.normalized : -transform.forward;
-            Vector3 targetPosition = transform.position - direction * wakeTrailDistance;
+            GameObject segmentObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            segmentObj.name = isBleedover ? "WakeSegment_Bleedover" : "WakeSegment";
+            segmentObj.transform.position = position;
+            segmentObj.transform.localScale = Vector3.one * wakeRadius * 2f;
 
-            // Track distance before moving
-            Vector3 oldPosition = wakePosition;
-
-            // Wake follows player smoothly
-            wakePosition = Vector3.MoveTowards(wakePosition, targetPosition, wakeMoveSpeed * Time.deltaTime);
-            
-            // Track total distance traveled
-            wakeDistanceTraveled += Vector3.Distance(oldPosition, wakePosition);
-            
-            if (wakeObject != null)
+            // Make it semi-transparent
+            Renderer renderer = segmentObj.GetComponent<Renderer>();
+            if (renderer != null)
             {
-                wakeObject.transform.position = wakePosition;
+                Material mat = new Material(Shader.Find("Standard"));
+                mat.color = isBleedover ? dangerColor : wakeColor;
+                mat.SetFloat("_Mode", 3); // Transparent mode
+                mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                mat.SetInt("_ZWrite", 0);
+                mat.DisableKeyword("_ALPHATEST_ON");
+                mat.EnableKeyword("_ALPHABLEND_ON");
+                mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                mat.renderQueue = 3000;
+                renderer.material = mat;
             }
+
+            // Remove collider so it doesn't interfere with physics
+            Collider col = segmentObj.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+
+            return segmentObj;
+        }
+
+        private void UpdateWakeSegments()
+        {
+            // Update and remove expired segments
+            for (int i = wakeSegments.Count - 1; i >= 0; i--)
+            {
+                WakeSegment segment = wakeSegments[i];
+                float age = Time.time - segment.creationTime;
+
+                if (age >= segmentLifetime)
+                {
+                    // Remove expired segment
+                    if (segment.visualObject != null)
+                    {
+                        Destroy(segment.visualObject);
+                    }
+                    wakeSegments.RemoveAt(i);
+                }
+                else
+                {
+                    // Update visual fade
+                    UpdateSegmentVisual(segment, age);
+                }
+            }
+        }
+
+        private void UpdateSegmentVisual(WakeSegment segment, float age)
+        {
+            if (segment.visualObject == null) return;
+
+            Renderer renderer = segment.visualObject.GetComponent<Renderer>();
+            if (renderer == null) return;
+
+            // Fade out based on age
+            float fadeProgress = age / segmentLifetime;
+            float alpha = (1f - fadeProgress) * 0.5f; // Max 0.5 transparency
+
+            Color color = segment.isBleedover ? dangerColor : wakeColor;
+            color.a = alpha;
+            renderer.material.color = color;
+
+            // Shrink slightly as it fades
+            float scale = Mathf.Lerp(wakeRadius * 2f, wakeRadius * 1.5f, fadeProgress);
+            segment.visualObject.transform.localScale = Vector3.one * scale;
         }
 
         private void CheckWakeDamage()
         {
-            // Find all objects within wake radius
-            Collider[] nearbyColliders = Physics.OverlapSphere(wakePosition, wakeRadius);
-
-            foreach (Collider col in nearbyColliders)
+            // Check damage for each wake segment
+            foreach (WakeSegment segment in wakeSegments)
             {
-                GameObject target = col.gameObject;
-                
-                // Skip if this is the wake object itself
-                if (target == wakeObject) continue;
+                // Find all objects within this segment's radius
+                Collider[] nearbyColliders = Physics.OverlapSphere(segment.position, wakeRadius);
 
-                Health targetHealth = col.GetComponent<Health>();
-                if (targetHealth != null && !targetHealth.IsDead)
+                foreach (Collider col in nearbyColliders)
                 {
-                    // Check if enough time has passed since last damage to this target
-                    float lastDamage = 0f;
-                    if (lastDamageTimes.ContainsKey(target))
+                    GameObject target = col.gameObject;
+                    
+                    // Skip if this is a wake segment visual
+                    if (target.name.Contains("WakeSegment")) continue;
+
+                    Health targetHealth = col.GetComponent<Health>();
+                    if (targetHealth != null && !targetHealth.IsDead)
                     {
-                        lastDamage = lastDamageTimes[target];
-                    }
-
-                    if (Time.time - lastDamage >= damageInterval)
-                    {
-                        // Deal damage
-                        float damage = damagePerSecond * damageInterval;
-                        targetHealth.TakeDamage(damage);
-                        lastDamageTimes[target] = Time.time;
-
-                        // Check if this is the player
-                        bool isPlayer = target == gameObject;
-                        string targetName = isPlayer ? "Player" : target.name;
-                        
-                        Debug.Log($"Sonic boom wake hit {targetName} for {damage} damage!");
-
-                        // Spawn visual effect on damage
-                        if (spawnShockwaveEffect && Time.time - lastDamageTime >= 0.3f)
+                        // Check if enough time has passed since last damage to this target
+                        float lastDamage = 0f;
+                        if (lastDamageTimes.ContainsKey(target))
                         {
-                            Color effectColor = isPlayer ? dangerColor : shockwaveColor;
-                            ShockwaveEffect.SpawnShockwave(wakePosition, effectColor, wakeRadius * 1.5f);
-                            lastDamageTime = Time.time;
+                            lastDamage = lastDamageTimes[target];
+                        }
+
+                        if (Time.time - lastDamage >= damageInterval)
+                        {
+                            // Deal damage
+                            float damage = damagePerSecond * damageInterval;
+                            targetHealth.TakeDamage(damage);
+                            lastDamageTimes[target] = Time.time;
+
+                            // Check if this is the player
+                            bool isPlayer = target == gameObject;
+                            string targetName = isPlayer ? "Player" : target.name;
+                            
+                            Debug.Log($"Sonic boom wake hit {targetName} for {damage} damage!");
+
+                            // Spawn visual effect on damage (throttled)
+                            if (spawnShockwaveEffect)
+                            {
+                                Color effectColor = isPlayer ? dangerColor : shockwaveColor;
+                                ShockwaveEffect.SpawnShockwave(segment.position, effectColor, wakeRadius * 1.5f);
+                            }
                         }
                     }
                 }
             }
         }
 
-        private void UpdateWakeVisuals()
-        {
-            if (wakeObject == null) return;
-
-            Renderer renderer = wakeObject.GetComponent<Renderer>();
-            if (renderer == null) return;
-
-            // Calculate fade based on age and bleedover
-            float wakeAge = Time.time - wakeCreationTime;
-            float ageProgress = wakeAge / maxWakeLifetime;
-            
-            // Calculate bleedover fade
-            float bleedoverFade = 1f;
-            if (isInBleedover)
-            {
-                float bleedoverElapsed = Time.time - speedDroppedBelowThresholdTime;
-                bleedoverFade = 1f - (bleedoverElapsed / bleedoverDuration);
-            }
-
-            // Combine fades
-            float finalAlpha = Mathf.Min(1f - ageProgress, bleedoverFade);
-            finalAlpha = Mathf.Clamp01(finalAlpha);
-
-            // Update material color
-            Color currentColor = isInBleedover ? dangerColor : wakeColor;
-            currentColor.a = finalAlpha * 0.5f; // Base transparency
-            renderer.material.color = currentColor;
-
-            // Update scale based on fade (shrink as it dissipates)
-            float scale = Mathf.Lerp(wakeRadius * 2f, wakeRadius * 1.5f, 1f - finalAlpha);
-            wakeObject.transform.localScale = Vector3.one * scale;
-        }
-
-        private void DeactivateBoom()
-        {
-            hasBoomActive = false;
-            isInBleedover = false;
-            
-            if (wakeObject != null)
-            {
-                wakeObject.SetActive(false);
-            }
-            
-            // Clear damage tracking
-            lastDamageTimes.Clear();
-            
-            Debug.Log("Sonic boom deactivated");
-        }
-        
         void OnDestroy()
         {
-            // Clean up wake object when component is destroyed
-            if (wakeObject != null)
+            // Clean up all wake segment visuals when component is destroyed
+            foreach (WakeSegment segment in wakeSegments)
             {
-                Destroy(wakeObject);
+                if (segment.visualObject != null)
+                {
+                    Destroy(segment.visualObject);
+                }
             }
+            wakeSegments.Clear();
         }
 
         private void DrawWakeIndicator()
         {
-            if (!hasBoomActive) return;
+            if (wakeSegments.Count == 0) return;
 
-            // Determine color based on distance to player (closer = more danger)
-            float distanceToPlayer = Vector3.Distance(wakePosition, transform.position);
-            Color currentColor = distanceToPlayer < wakeTrailDistance * 0.5f ? dangerColor : wakeColor;
-
-            // Draw wake sphere
-            Debug.DrawLine(wakePosition + Vector3.up * wakeRadius, wakePosition - Vector3.up * wakeRadius, currentColor);
-            Debug.DrawLine(wakePosition + Vector3.right * wakeRadius, wakePosition - Vector3.right * wakeRadius, currentColor);
-            Debug.DrawLine(wakePosition + Vector3.forward * wakeRadius, wakePosition - Vector3.forward * wakeRadius, currentColor);
-
-            // Draw connection to player
-            Debug.DrawLine(transform.position, wakePosition, currentColor);
-
-            // Draw circle around wake (simplified)
-            int segments = 16;
-            for (int i = 0; i < segments; i++)
+            // Draw lines connecting segments to show the trail
+            for (int i = 0; i < wakeSegments.Count - 1; i++)
             {
-                float angle1 = (i / (float)segments) * Mathf.PI * 2f;
-                float angle2 = ((i + 1) / (float)segments) * Mathf.PI * 2f;
+                WakeSegment current = wakeSegments[i];
+                WakeSegment next = wakeSegments[i + 1];
+                
+                Color lineColor = current.isBleedover ? dangerColor : wakeColor;
+                Debug.DrawLine(current.position, next.position, lineColor);
+            }
 
-                Vector3 point1 = wakePosition + new Vector3(Mathf.Cos(angle1), 0, Mathf.Sin(angle1)) * wakeRadius;
-                Vector3 point2 = wakePosition + new Vector3(Mathf.Cos(angle2), 0, Mathf.Sin(angle2)) * wakeRadius;
-
-                Debug.DrawLine(point1, point2, currentColor);
+            // Draw connection from last segment to player if active
+            if (hasBoomActive && wakeSegments.Count > 0)
+            {
+                WakeSegment lastSegment = wakeSegments[wakeSegments.Count - 1];
+                Color lineColor = isInBleedover ? dangerColor : wakeColor;
+                Debug.DrawLine(lastSegment.position, transform.position, lineColor);
             }
         }
 
         void OnDrawGizmosSelected()
         {
-            if (!showDebugGizmos || !hasBoomActive) return;
+            if (!showDebugGizmos || wakeSegments.Count == 0) return;
 
-            // Draw wake sphere in editor
-            Gizmos.color = wakeColor;
-            Gizmos.DrawWireSphere(wakePosition, wakeRadius);
+            // Draw all wake segments in editor
+            foreach (WakeSegment segment in wakeSegments)
+            {
+                Gizmos.color = segment.isBleedover ? dangerColor : wakeColor;
+                Gizmos.DrawWireSphere(segment.position, wakeRadius);
+            }
 
-            // Draw line to player
-            Gizmos.DrawLine(transform.position, wakePosition);
+            // Draw trail path
+            for (int i = 0; i < wakeSegments.Count - 1; i++)
+            {
+                Gizmos.color = wakeSegments[i].isBleedover ? dangerColor : wakeColor;
+                Gizmos.DrawLine(wakeSegments[i].position, wakeSegments[i + 1].position);
+            }
+
+            // Draw line from last segment to player if active
+            if (hasBoomActive && wakeSegments.Count > 0)
+            {
+                Gizmos.color = isInBleedover ? dangerColor : wakeColor;
+                Gizmos.DrawLine(wakeSegments[wakeSegments.Count - 1].position, transform.position);
+            }
         }
     }
 }
