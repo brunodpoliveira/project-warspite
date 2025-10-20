@@ -28,9 +28,10 @@ namespace Warspite.Player
         [SerializeField] private float segmentLifetime = 2f; // How long each segment persists
         [SerializeField] private float bleedoverDuration = 1.5f; // Time wake persists after dropping below speed threshold
 
-        [Header("Damage Settings")]
-        [SerializeField] private float damagePerSecond = 50f; // Damage dealt by wake trail per second
-        [SerializeField] private float damageInterval = 0.5f; // Time between damage ticks
+        [Header("Shockwave Settings")]
+        [SerializeField] private float shockwaveDamage = 75f; // Damage dealt by shockwave on contact
+        [SerializeField] private float shockwaveSpeed = 15f; // Speed shockwave travels through tunnel (m/s)
+        [SerializeField] private float shockwaveRadius = 3f; // Radius of shockwave damage sphere
 
         [Header("Visual Feedback")]
         [SerializeField] private bool showDebugGizmos = true;
@@ -48,14 +49,23 @@ namespace Warspite.Player
             public bool isBleedover; // Created during bleedover period
         }
 
+        // Shockwave class to track the traveling damage wave
+        private class Shockwave
+        {
+            public int currentSegmentIndex; // Which segment the wave is at
+            public float progress; // 0-1 progress between current and next segment
+            public GameObject visualObject;
+            public System.Collections.Generic.HashSet<GameObject> damagedTargets; // Track what's been hit
+        }
+
         private bool hasBoomActive = false;
         private System.Collections.Generic.List<WakeSegment> wakeSegments = new System.Collections.Generic.List<WakeSegment>();
+        private Shockwave activeShockwave = null;
         private Vector3 lastSegmentPosition;
         private float distanceSinceLastSegment;
         private float speedDroppedBelowThresholdTime;
         private float boomActivationTime;
         private bool isInBleedover = false;
-        private System.Collections.Generic.Dictionary<GameObject, float> lastDamageTimes = new System.Collections.Generic.Dictionary<GameObject, float>();
         
         private const float PLAYER_GRACE_PERIOD = 0.5f; // Player immune to own wake for this duration after activation
 
@@ -110,10 +120,11 @@ namespace Warspite.Player
                 // Check if we should enter bleedover period
                 if (!isInBleedover)
                 {
-                    // Just dropped below speed threshold - stop creating new segments
+                    // Just dropped below speed threshold - spawn shockwave!
                     isInBleedover = true;
                     speedDroppedBelowThresholdTime = Time.time;
-                    Debug.Log("Sonic boom entering bleedover period - no new segments, existing trail will dissipate");
+                    SpawnShockwave();
+                    Debug.Log("Sonic boom entering bleedover period - shockwave spawned!");
                 }
                 
                 // Check if bleedover period has expired
@@ -127,15 +138,17 @@ namespace Warspite.Player
                         isInBleedover = false;
                         Debug.Log("Sonic boom bleedover ended");
                     }
-                    // During bleedover: DO NOT create new segments, just let existing ones persist and fade
                 }
             }
 
             // Update and clean up segments
             UpdateWakeSegments();
             
-            // Check for damage from all wake segments
-            CheckWakeDamage();
+            // Update shockwave if active
+            if (activeShockwave != null)
+            {
+                UpdateShockwave();
+            }
             
             // Draw visual indicators
             if (showDebugGizmos)
@@ -266,61 +279,170 @@ namespace Warspite.Player
             segment.visualObject.transform.localScale = Vector3.one * scale;
         }
 
-        private void CheckWakeDamage()
+        private void SpawnShockwave()
         {
-            // Check damage for each wake segment
-            foreach (WakeSegment segment in wakeSegments)
+            // Don't spawn if no segments exist
+            if (wakeSegments.Count == 0)
             {
-                // Find all objects within this segment's radius
-                Collider[] nearbyColliders = Physics.OverlapSphere(segment.position, wakeRadius);
+                Debug.Log("No segments to spawn shockwave through");
+                return;
+            }
 
-                foreach (Collider col in nearbyColliders)
+            activeShockwave = new Shockwave
+            {
+                currentSegmentIndex = 0,
+                progress = 0f,
+                damagedTargets = new System.Collections.Generic.HashSet<GameObject>(),
+                visualObject = CreateShockwaveVisual()
+            };
+
+            Debug.Log($"Shockwave spawned at segment 0 of {wakeSegments.Count}");
+        }
+
+        private void UpdateShockwave()
+        {
+            if (activeShockwave == null || wakeSegments.Count == 0) return;
+
+            // Calculate how far to move this frame
+            float distanceToMove = shockwaveSpeed * Time.deltaTime;
+            
+            // Move through segments
+            while (distanceToMove > 0 && activeShockwave.currentSegmentIndex < wakeSegments.Count - 1)
+            {
+                WakeSegment currentSeg = wakeSegments[activeShockwave.currentSegmentIndex];
+                WakeSegment nextSeg = wakeSegments[activeShockwave.currentSegmentIndex + 1];
+                
+                float segmentDistance = Vector3.Distance(currentSeg.position, nextSeg.position);
+                float remainingInSegment = segmentDistance * (1f - activeShockwave.progress);
+                
+                if (distanceToMove >= remainingInSegment)
                 {
-                    GameObject target = col.gameObject;
+                    // Move to next segment
+                    distanceToMove -= remainingInSegment;
+                    activeShockwave.currentSegmentIndex++;
+                    activeShockwave.progress = 0f;
+                }
+                else
+                {
+                    // Move within current segment
+                    activeShockwave.progress += distanceToMove / segmentDistance;
+                    distanceToMove = 0f;
+                }
+            }
+
+            // Check if shockwave reached the end
+            if (activeShockwave.currentSegmentIndex >= wakeSegments.Count - 1)
+            {
+                activeShockwave.progress = 1f;
+                
+                // Destroy shockwave after a brief moment at the end
+                if (activeShockwave.visualObject != null)
+                {
+                    Destroy(activeShockwave.visualObject);
+                }
+                activeShockwave = null;
+                Debug.Log("Shockwave reached end of tunnel");
+                return;
+            }
+
+            // Update shockwave position and check for damage
+            Vector3 shockwavePosition = GetShockwavePosition();
+            if (activeShockwave.visualObject != null)
+            {
+                activeShockwave.visualObject.transform.position = shockwavePosition;
+            }
+
+            // Check for targets to damage
+            CheckShockwaveDamage(shockwavePosition);
+        }
+
+        private Vector3 GetShockwavePosition()
+        {
+            if (activeShockwave == null || wakeSegments.Count == 0) return Vector3.zero;
+
+            int index = activeShockwave.currentSegmentIndex;
+            if (index >= wakeSegments.Count - 1) return wakeSegments[wakeSegments.Count - 1].position;
+
+            Vector3 currentPos = wakeSegments[index].position;
+            Vector3 nextPos = wakeSegments[index + 1].position;
+            
+            return Vector3.Lerp(currentPos, nextPos, activeShockwave.progress);
+        }
+
+        private void CheckShockwaveDamage(Vector3 position)
+        {
+            // Find all objects within shockwave radius
+            Collider[] nearbyColliders = Physics.OverlapSphere(position, shockwaveRadius);
+
+            foreach (Collider col in nearbyColliders)
+            {
+                GameObject target = col.gameObject;
+                
+                // Skip if already damaged by this shockwave
+                if (activeShockwave.damagedTargets.Contains(target)) continue;
+                
+                // Skip if this is a wake segment visual
+                if (target.name.Contains("WakeSegment") || target.name.Contains("Shockwave")) continue;
+
+                Health targetHealth = col.GetComponent<Health>();
+                if (targetHealth != null && !targetHealth.IsDead)
+                {
+                    // Check if this is the player
+                    bool isPlayer = target == gameObject;
                     
-                    // Skip if this is a wake segment visual
-                    if (target.name.Contains("WakeSegment")) continue;
-
-                    Health targetHealth = col.GetComponent<Health>();
-                    if (targetHealth != null && !targetHealth.IsDead)
+                    // Skip player damage during grace period
+                    if (isPlayer && Time.time - boomActivationTime < PLAYER_GRACE_PERIOD)
                     {
-                        // Check if this is the player
-                        bool isPlayer = target == gameObject;
-                        
-                        // Skip player damage during grace period
-                        if (isPlayer && Time.time - boomActivationTime < PLAYER_GRACE_PERIOD)
-                        {
-                            continue;
-                        }
-                        
-                        // Check if enough time has passed since last damage to this target
-                        float lastDamage = 0f;
-                        if (lastDamageTimes.ContainsKey(target))
-                        {
-                            lastDamage = lastDamageTimes[target];
-                        }
+                        continue;
+                    }
 
-                        if (Time.time - lastDamage >= damageInterval)
-                        {
-                            // Deal damage
-                            float damage = damagePerSecond * damageInterval;
-                            targetHealth.TakeDamage(damage);
-                            lastDamageTimes[target] = Time.time;
+                    // Deal damage once
+                    targetHealth.TakeDamage(shockwaveDamage);
+                    activeShockwave.damagedTargets.Add(target);
 
-                            string targetName = isPlayer ? "Player" : target.name;
-                            
-                            Debug.Log($"Sonic boom wake hit {targetName} for {damage} damage!");
+                    string targetName = isPlayer ? "Player" : target.name;
+                    Debug.Log($"Shockwave hit {targetName} for {shockwaveDamage} damage!");
 
-                            // Spawn visual effect on damage (throttled)
-                            if (spawnShockwaveEffect)
-                            {
-                                Color effectColor = isPlayer ? dangerColor : shockwaveColor;
-                                ShockwaveEffect.SpawnShockwave(segment.position, effectColor, wakeRadius * 1.5f);
-                            }
-                        }
+                    // Spawn visual effect
+                    if (spawnShockwaveEffect)
+                    {
+                        Color effectColor = isPlayer ? dangerColor : shockwaveColor;
+                        ShockwaveEffect.SpawnShockwave(position, effectColor, shockwaveRadius);
                     }
                 }
             }
+        }
+
+        private GameObject CreateShockwaveVisual()
+        {
+            GameObject shockwaveObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            shockwaveObj.name = "ShockwaveVisual";
+            shockwaveObj.transform.localScale = Vector3.one * shockwaveRadius * 2f;
+
+            // Make it semi-transparent and pulsing
+            Renderer renderer = shockwaveObj.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                Material mat = new Material(Shader.Find("Standard"));
+                mat.color = shockwaveColor;
+                mat.SetFloat("_Mode", 3); // Transparent mode
+                mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                mat.SetInt("_ZWrite", 0);
+                mat.DisableKeyword("_ALPHATEST_ON");
+                mat.EnableKeyword("_ALPHABLEND_ON");
+                mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                mat.renderQueue = 3000;
+                mat.EnableKeyword("_EMISSION");
+                mat.SetColor("_EmissionColor", shockwaveColor * 2f);
+                renderer.material = mat;
+            }
+
+            // Remove collider
+            Collider col = shockwaveObj.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+
+            return shockwaveObj;
         }
 
         void OnDestroy()
@@ -334,6 +456,12 @@ namespace Warspite.Player
                 }
             }
             wakeSegments.Clear();
+            
+            // Clean up shockwave
+            if (activeShockwave != null && activeShockwave.visualObject != null)
+            {
+                Destroy(activeShockwave.visualObject);
+            }
         }
 
         private void DrawWakeIndicator()

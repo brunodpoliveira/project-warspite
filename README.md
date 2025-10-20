@@ -91,17 +91,16 @@ We only want to answer one question:
    - Wide cone AOE attack with high damage and knockback
    - Charge meter displayed in DebugHUD (cyan when ready)
 
-10. **Sonic Boom (High-Speed Wake Trail)**
+10. **Sonic Boom (Traveling Shockwave)**
    - Add `SonicBoom` component to player for dangerous speed mechanics
-   - Creates **trail of wake segments** along entire high-speed path (like jet contrail)
-   - New segment spawned every 0.5m traveled at high speed
-   - Each segment damages anything it touches (50 damage/second)
-   - **Grace period**: Player immune to own wake for 0.5s after activation
-   - **Trail tunnel concept**: Player at front, boom at back, damage throughout
-   - **Bleedover period**: Existing trail persists and turns red for 1.5s after speed drop (no new segments)
-   - **Auto-dissipation**: Each segment fades after 2 seconds of existence
-   - Visual feedback: Orange trail (active) → Red (bleedover) → Fades out (dissipation)
-   - Risk/reward: leaves dangerous path behind, enemies can be caught in trail
+   - Creates **trail of wake segments** along high-speed path (visual markers, no damage)
+   - New segment spawned every 0.5m traveled at high speed in L3 time dilation
+   - **Shockwave trigger**: When player drops below speed, shockwave spawns at trail start
+   - **Traveling damage**: Shockwave travels through tunnel at 15 m/s, dealing burst damage (75 HP)
+   - **One-time hit**: Each target damaged once as wave passes through
+   - **Grace period**: Player immune to own shockwave for 0.5s after activation
+   - **Visual feedback**: Orange trail → Cyan glowing shockwave travels through → Trail fades
+   - Risk/reward: Must stay ahead of shockwave or take damage, can lead it through enemies
 
 ---
 
@@ -159,19 +158,18 @@ We only want to answer one question:
   - Middle Mouse Button to fire when fully charged
   - Charge meter displayed in DebugHUD with color-coded status
   - Encourages aggressive, mobile playstyle
-- **Sonic Boom (High-Speed Wake Trail)**: Dangerous trail marking player's high-speed path
+- **Sonic Boom (Traveling Shockwave)**: Dangerous shockwave that chases player through their trail
   - Activates when moving fast (8+ m/s) in deepest time dilation (L3)
-  - Creates trail of wake segments (one every 0.5m traveled)
-  - Each segment is a damaging sphere (2m radius, 50 damage/second in 0.5s ticks)
-  - **Grace period**: Player immune to own wake for 0.5s after activation (prevents instant death)
-  - **Trail tunnel concept**: Entire path becomes dangerous zone
-  - Player leaves trail behind like jet contrail
-  - Enemies caught in trail path take continuous damage
-  - **Bleedover mechanic**: When speed drops, NO new segments created, existing trail persists 1.5s and turns red
-  - **Segment dissipation**: Each segment fades after 2s lifetime from creation
-  - Visual feedback: Orange trail (active) → All turn red (bleedover) → Individual fade/shrink (dissipation)
-  - Strategic gameplay: plan routes carefully, use trail to damage enemies, avoid backtracking
-  - Risk/reward: creates area denial, but can trap player if not careful
+  - Creates trail of wake segments (one every 0.5m traveled) - visual only, no damage
+  - **Shockwave spawn**: When player drops below speed, shockwave spawns at oldest segment
+  - **Wave travel**: Shockwave moves through tunnel at 15 m/s (faster than player can run)
+  - **Burst damage**: 75 HP damage on contact, each target hit only once
+  - **Grace period**: Player immune for 0.5s after activation (prevents instant death)
+  - **Visual**: Cyan glowing sphere (3m radius) with emission, travels along trail path
+  - **Trail dissipation**: Segments fade after 2s, shockwave dissipates at tunnel end
+  - **Bleedover**: Trail persists 1.5s after speed drop, turns red during this period
+  - Strategic gameplay: Stay ahead of wave, lead it through enemies, plan escape routes
+  - Risk/reward: Powerful area attack but can catch player if they slow down or backtrack
 
 ### Visual Feedback (Planned)
 1. **Wall Walking**
