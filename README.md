@@ -1,138 +1,41 @@
-# project-warspite
+# Project Warspite
 
-# WARSPITE — Movement & Time Dilation Prototype
+## Prototype Status: **FEATURE COMPLETE**
 
-## Purpose
+A momentum-based movement prototype with time dilation, vampire mechanics, and high-speed traversal.
 
-This prototype exists solely to **validate the core fantasy** of playing as a grounded super-speed character who perceives time in slow motion while maintaining **momentum-based physical vulnerability**.
+### Core Concept
+Play as a super-speed character who perceives time in slow motion while maintaining momentum-based physics. The deeper the time dilation, the more abilities unlock (bullet catching, wall walking, sonic boom).
 
-We are **not** building a full combat system or polished experience.  
-We only want to answer one question:
+### Implemented Systems
+- ✅ 3-level time dilation (L1, L2, L3) with resource management
+- ✅ Momentum-based locomotion with inertia and wall bounce
+- ✅ Bullet catching/throwing (L3 only)
+- ✅ Health degeneration + vampire healing on critical enemies
+- ✅ Melee combat with doomed system
+- ✅ Audio Pulse (movement-charged hyper strike)
+- ✅ Sonic Boom (traveling shockwave on high-speed trails)
+- ✅ Wall Walking (manual surface traversal in L3)
+- ✅ Grenade throwing with trajectory preview
+- ✅ Turning crosshair (turret timing feedback)
 
-> *"Is improvisational chaos fun when movement is inertia-driven and time dilation is under the player's control?"*
-
----
-## Core Mechanics to Validate
-
-- **Time States**: Player can toggle between 4 time dilation levels  
-  `Normal → Slow (L1) → Deep Slow (L2) → Near-Freeze (L3)`
-
-- **Player stays real-time**: Player movement and camera responsiveness remain constant across time levels.
-
-- **World slows**: Projectiles, spawners, AI, and physics props slow according to the selected time level.
-
-- **Momentum-Based Locomotion**: Movement carries inertia. Direction changes are not instant.
-
-- **Collision Consequences**: Hitting walls at high relative speed causes bounce/disruption.
-
-- **Projectile Interaction**: In deepest slow (L3), bullets can be caught and thrown back.
+### Known Issue: L3 Movement Lag
+Movement in L3 time dilation feels laggy/stuttery. This affects all movement including wall walking. **Priority for next iteration: smooth out L3 locomotion.**
 
 ---
 
-## Controls (current test mapping)
+## Controls
 
-- **Time**: `Q` (slower) / `E` (faster)
+- **Time Dilation**: `Q` (slower) / `E` (faster) - 3 levels: L1, L2, L3
 - **Move**: `WASD`
-- **Mouse**: Look
-- **Catch (L3 only)**: Hold Right Mouse Button near a bullet (must be in Near-Freeze L3!)
+- **Look**: Mouse
+- **Melee**: Left Mouse Button
+- **Audio Pulse**: Middle Mouse Button (charges with movement)
+- **Vampire Suck**: `F` (on critical enemies - pink pulsing indicator)
+- **Wall Walking**: `Enter` (L3 only - press near walls to activate/deactivate)
+- **Catch Bullet**: Hold Right Mouse Button (L3 only, near bullet)
 - **Throw**: Release RMB while holding projectile
-- **Punch**: Left Mouse Button (melee attack)
-- **Audio Pulse**: Middle Mouse Button (rechargeable hyper strike - charges with movement)
-- **Suck**: `F` (vampire mechanic on critical enemies - look for pink pulsing indicator)
 - **Restart**: `R`
-
-**Note**: Catch only works when time shows "Near-Freeze L3" - press Q twice to reach it!
-
----
-
-## Minimal Scene Setup (for a clean test)
-
-1. **Time Controller**  
-   - Add `TimeDilationController` to an empty GameObject (e.g., `GameSystems/`).  
-   - Leave Input Action fields empty to use fallback keys `Q/E` and `R`.
-
-2. **Debug HUD (optional but useful)**  
-   - Add `DebugHUD` to any always-active object (camera or `GameSystems/`).  
-   - Optional references: `timeController` (drag the `TimeDilationController`), `momentum` (player's `MomentumLocomotion`).
-
-3. **Projectile Source for Visual Validation**  
-   - Add `SimpleTurret` (drag-and-drop) to any object (a cylinder works).  
-   - Leave `Projectile Prefab` empty to auto-use a runtime cube projectile.  
-   - Tune: `interval`, `muzzleSpeed`, `burstCount`, `spreadAngle`.
-
-4. **Health Bars (optional)**
-   - Add `AutoHealthBar` component to turrets/enemies to automatically create world-space health bars.
-   - Health bars fade when full and show color-coded health status (green/yellow/red).
-
-5. **Melee Combat**
-   - Add `MeleeCombat` component to player for punch attacks.
-   - Default: Left Mouse Button to punch, configurable range and damage.
-
-6. **Doomed Enemy Tagging & Critical Status**
-   - Add `DoomedTag` component to turrets/enemies to enable visual feedback.
-   - **Orange glow**: Enemy will be destroyed by incoming projectile/melee attack
-   - **Pink pulsing sphere**: Enemy is at critical health and can be drained for HP
-   - Automatically updates based on health percentage
-
-7. **Trajectory Visualization**
-   - Automatically created by `CatchAndThrow` component when holding projectiles
-   - Shows predicted path with impact point marker
-   - Helps plan throws in slow-motion
-
-8. **Turning Crosshair**
-   - Add `TurningCrosshair` component to turrets for firing cadence feedback
-   - Automatically syncs with turret firing intervals
-   - Color-coded visual feedback for timing
-
-9. **Audio Pulse (Advanced Melee)**
-   - Add `AudioPulse` component to player for rechargeable hyper strike
-   - Charges automatically as player moves (faster movement = faster charge)
-   - Default: Middle Mouse Button to fire when fully charged
-   - Wide cone AOE attack with high damage and knockback
-   - Charge meter displayed in DebugHUD (cyan when ready)
-
-10. **Sonic Boom (Traveling Shockwave)**
-   - Add `SonicBoom` component to player for dangerous speed mechanics
-   - Creates **trail of wake segments** along high-speed path (visual markers, no damage)
-   - New segment spawned every 0.5m traveled at high speed in L3 time dilation
-   - **Shockwave trigger**: When player drops below speed, shockwave spawns at trail start
-   - **Traveling damage**: Shockwave travels through tunnel at 15 m/s, dealing burst damage (75 HP)
-   - **One-time hit**: Each target damaged once as wave passes through
-   - **Grace period**: Player immune to own shockwave for 0.5s after activation
-   - **Visual feedback**: Orange trail → Cyan glowing shockwave travels through → Trail fades
-   - Risk/reward: Must stay ahead of shockwave or take damage, can lead it through enemies
-
-11. **Wall Walking**
-   - Add `WallWalking` component to player for surface traversal in L3 time dilation
-   - **Button prompt system**: Press E near walls to activate (prevents auto-stick frustration)
-   - Detects nearby surfaces (walls, ceilings, floors) within 2m
-   - **Manual activation**: Player chooses when to wall walk (no auto-climbing fountains!)
-   - **Dynamic gravity**: Gravity direction rotates to match surface orientation
-   - **Smooth transitions**: Player smoothly rotates between surfaces
-   - **Toggle on/off**: Press E again to exit wall walking and return to normal
-   - Only available in deepest time dilation (L3) for maximum control
-   - Integrates with `MomentumLocomotion` for seamless movement
-   - Visual feedback: Green sphere shows available surface, yellow line to prompt location
-
----
-
-## Time Dilation Implementation Options 
-
-- Global TimeScale + Player Compensator
-  - Set `Time.timeScale` and `Time.fixedDeltaTime` to slow everything.  
-  - Add a `PlayerTimeCompensator` to keep the player moving in real-time by adding missing displacement after normal movement.  
-  - Pros: Simple world slowdown; minimal world code.  
-  - Cons: Can be brittle with third-party controllers and root motion.
-
----
-
-## Success Criteria
-
-- **Player Speed Consistency**: Player `CharacterController.velocity` magnitude remains roughly constant across time levels while holding forward.
-- **Camera Consistency**: Look responsiveness feels the same in deep slow and normal time.
-- **World Slowdown**: Turret shot cadence and projectile motion clearly slow with lower time levels.
-- **Interactions**: Catch/Throw in deepest slow remains functional and readable.
-- **Stability**: No tunneling or large pops when switching time levels.
 
 ---
 
@@ -143,60 +46,6 @@ We only want to answer one question:
 - Input must be read with real-time deltas if using global slowmo (to avoid sluggish feel).
 
 ---
-
-## Vertical Slice - Additional Systems
-
-### Implemented
-- **Time Dilation Bar**: Fills linearly over time, drains when time dilation active (faster drain at deeper slow levels)
-- **Player Health**: Degenerates over time, recharged by "sucking" enemies at critical health
-- **Turret Health**: Turrets can be destroyed by thrown projectiles
-- **Health Bar HUD**: World-space health bars for turrets and enemies that fade when full/dead
-- **Melee Combat**: Simple punch system (Left Mouse Button) with range detection, damage, and knockback
-  - Marks enemies as doomed when dealing lethal damage
-- **Doomed Enemy Tagging**: Enemies marked with visual feedback (orange glow) when targeted by lethal attacks
-  - Works with thrown projectiles and melee attacks
-  - Prevents wasting resources on already-doomed enemies
-- **Critical Status Indicators**: Enemies show pulsing pink indicator when at critical health (drainable)
-  - Helps players identify which enemies can be drained for HP
-- **Trajectory Indicators**: Ray visualization showing projectile path when holding caught projectiles
-  - Shows predicted impact point
-  - Helps plan throws in slow-motion
-- **Turning Crosshair**: Visual turret firing cadence feedback
-  - Spins while charging, locks when ready to fire
-  - Color-coded: Red (just fired) → Yellow (charging) → Green (ready)
-- **Audio Pulse (Advanced Melee)**: Rechargeable hyper strike that charges with movement
-  - Charges automatically as player moves (faster movement = faster charge)
-  - Wide cone AOE attack with high damage and knockback
-  - Middle Mouse Button to fire when fully charged
-  - Charge meter displayed in DebugHUD with color-coded status
-  - Encourages aggressive, mobile playstyle
-- **Sonic Boom (Traveling Shockwave)**: Dangerous shockwave that chases player through their trail
-  - Activates when moving fast (8+ m/s) in deepest time dilation (L3)
-  - Creates trail of wake segments (one every 0.5m traveled) - visual only, no damage
-  - **Shockwave spawn**: When player drops below speed, shockwave spawns at oldest segment
-  - **Wave travel**: Shockwave moves through tunnel at 15 m/s (faster than player can run)
-  - **Burst damage**: 75 HP damage on contact, each target hit only once
-  - **Grace period**: Player immune for 0.5s after activation (prevents instant death)
-  - **Visual**: Cyan glowing sphere (3m radius) with emission, travels along trail path
-  - **Trail dissipation**: Segments fade after 2s, shockwave dissipates at tunnel end
-  - **Bleedover**: Trail persists 1.5s after speed drop, turns red during this period
-  - Strategic gameplay: Stay ahead of wave, lead it through enemies, plan escape routes
-  - Risk/reward: Powerful area attack but can catch player if they slow down or backtrack
-
-- **Wall Walking**: Manual surface traversal with button prompt
-  - Available in deepest time dilation (L3) only
-  - **Button prompt**: Press E near walls to activate/deactivate (default key)
-  - Detects nearby surfaces (walls, ceilings, floors) within 2m
-  - **Manual control**: Player chooses when to wall walk (prevents auto-stick to objects)
-  - **Gravity manipulation**: Gravity direction rotates to point away from surface
-  - **Player orientation**: Character rotates to align "up" with surface normal
-  - **Smooth transitions**: 5x/sec interpolation between orientations
-  - **Multi-surface detection**: 6-directional raycasts (forward, back, left, right, up, down)
-  - **Minimum wall angle**: 45° from ground to be considered "wall"
-  - **Toggle system**: Press E again to exit and return to normal gravity
-  - Integrates with momentum-based movement system
-  - Visual debug: Green sphere at prompt position, yellow line to available surface
-  - Allows creative traversal and combat positioning without frustration
 
 ### Design Philosophy: Push-Forward Combat
 The implemented systems create a "push-forward" mentality:
@@ -220,140 +69,63 @@ The implemented systems create a "push-forward" mentality:
 
 ---
 
-## Animation Integration Insights (For Future Iterations)
-
-### Why Third-Party Controllers Fail with Time Dilation
-- **Global `Time.timeScale` breaks third-party controllers** that assume normal time flow
-- **Root motion animations** become desynchronized when time scales change
-- **Built-in animation state machines** don't compensate for time manipulation
-
-### Animation Architecture for Time Dilation Games
-
-#### 1. Separate Animation Time from Game Time
-```csharp
-// Core principle: Animations run on UNSCALED time
-animator.updateMode = AnimatorUpdateMode.UnscaledTime;
-```
-**Why**: Player animations must stay fluid at real-time speed while world slows down.
-
-#### 2. Manual Animation Speed Control
-Instead of relying on `Time.timeScale`:
-```csharp
-// On player animator
-animator.speed = 1.0f; // Always real-time
-
-// On world entities (enemies, props)
-animator.speed = currentTimeDilationFactor; // 0.1x to 1.0x
-```
-
-#### 3. Velocity-Driven Animation (Not Time-Driven)
-```csharp
-// Blend tree parameters based on actual movement
-float velocityMagnitude = characterController.velocity.magnitude;
-animator.SetFloat("Speed", velocityMagnitude);
-animator.SetFloat("DirectionX", localVelocity.x);
-animator.SetFloat("DirectionZ", localVelocity.z);
-```
-**Benefit**: Animations automatically match momentum-based locomotion.
-
-### Recommended Animation Setup
-
-#### Player Character
-1. **Blend Tree Structure**:
-   - Idle (0 velocity)
-   - Walk (low velocity)
-   - Run (medium velocity)
-   - Sprint (high velocity)
-   - Directional strafing (based on local velocity X/Z)
-
-2. **Layer Setup**:
-   - **Base Layer**: Locomotion blend tree
-   - **Upper Body Layer**: Aiming/shooting (additive)
-   - **Action Layer**: Melee attacks, catching projectiles (override)
-
-3. **Key Parameters**:
-   ```csharp
-   animator.SetFloat("VelocityMagnitude", velocity.magnitude);
-   animator.SetFloat("StrafeX", localVelocity.x);
-   animator.SetFloat("StrafeZ", localVelocity.z);
-   animator.SetBool("IsGrounded", isGrounded);
-   animator.SetTrigger("Punch"); // For melee
-   animator.SetTrigger("Catch"); // For projectile catch
-   ```
-
-#### Enemy/Turret Animations
-```csharp
-// Turrets: Simple rotation + firing animation
-animator.speed = TimeDilationController.CurrentTimeFactor;
-animator.SetTrigger("Fire");
-
-// Enemies: Full locomotion affected by time
-animator.speed = TimeDilationController.CurrentTimeFactor;
-```
-
-### Integration with Current Systems
-
-#### MomentumLocomotion + Animation
-```csharp
-// In MomentumLocomotion.cs (hypothetical addition)
-void UpdateAnimator()
-{
-    if (animator == null) return;
-    
-    Vector3 localVel = transform.InverseTransformDirection(velocity);
-    
-    animator.SetFloat("VelocityMagnitude", velocity.magnitude);
-    animator.SetFloat("VelocityX", localVel.x);
-    animator.SetFloat("VelocityZ", localVel.z);
-}
-```
-
-#### MeleeCombat + Animation
-```csharp
-// In MeleeCombat.cs
-void PerformPunch()
-{
-    animator?.SetTrigger("Punch");
-    // Existing punch logic...
-}
-```
-
-#### CatchAndThrow + Animation
-```csharp
-// Catching
-animator?.SetBool("HoldingProjectile", true);
-animator?.SetTrigger("Catch");
-
-// Throwing
-animator?.SetTrigger("Throw");
-animator?.SetBool("HoldingProjectile", false);
-```
-
-### Asset Recommendations
-
-#### Free Options
-- **Mixamo**: Humanoid animations, auto-rigging
-- **Unity Asset Store**: "Basic Motions FREE" by Kevin Iglesias
-- **Quaternius**: Low-poly characters with animations
-
-#### Paid (High Quality)
-- **Motion Matching**: For ultra-responsive movement
-- **Kinematic Character Controller** by Philippe St-Amand (supports custom time)
-
-### Critical Lessons from This Prototype
+## Critical Lessons from This Prototype
 
 1. **Keep animation separate from physics**: `CharacterController` velocity should drive animation, not vice versa
 2. **Unscaled time for player, scaled for world**: Maintains responsiveness
 3. **IK is optional**: For fast-paced games, full-body IK might be overkill
 4. **Procedural animation**: Consider procedural head-look, aim offset, or foot IK only if it adds to the fantasy
 
-### Migration Path for Next Iteration
+---
 
-1. Start with capsule + basic animator (like current project)
-2. Add simple idle/walk/run blend tree
-3. Hook velocity to blend tree parameters
-4. Test time dilation with `animator.speed` scaling
-5. Add action layers (melee, catch, throw)
-6. Polish with IK/procedural if needed
+## Next Steps: Fixing L3 Movement Lag
 
-**Key Takeaway**: Momentum-based systems are ideal for animation because velocity naturally drives blend trees. The main challenge is keeping player animations unscaled while world animations scale with time dilation.
+### The Problem
+Movement in L3 (deepest time dilation) feels laggy and stuttery. This affects:
+- Basic WASD movement
+- Wall walking transitions
+- Overall responsiveness
+
+### Likely Causes
+1. **Time.timeScale conflicts**: Global time scaling may interfere with player movement
+2. **FixedUpdate timing**: Physics updates may be out of sync at extreme time scales
+3. **Input sampling**: Input may be polled at wrong delta time
+4. **Animation sync**: If animations are added, they need unscaled time for player
+
+### Recommended Fixes (Priority Order)
+
+#### 1. Use Unscaled Delta Time for Player Movement
+```csharp
+// In MomentumLocomotion.cs and WallWalking.cs
+// Replace Time.deltaTime with Time.unscaledDeltaTime for player-specific calculations
+float deltaTime = Time.unscaledDeltaTime;
+```
+
+#### 2. Separate Player Physics from World Physics
+```csharp
+// Option A: Move player in Update() instead of FixedUpdate()
+// Option B: Use CharacterController.Move() which bypasses physics time scaling
+```
+
+#### 3. Input Smoothing
+```csharp
+// Smooth input over multiple frames to reduce stutter
+Vector3 smoothedInput = Vector3.Lerp(lastInput, currentInput, smoothingFactor);
+```
+
+#### 4. Animation Considerations (If Added Later)
+```csharp
+// Player animator must use unscaled time
+animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+animator.speed = 1.0f; // Always real-time
+
+// World entities use scaled time
+worldAnimator.speed = currentTimeDilationFactor; // 0.1x to 1.0x
+```
+
+### Testing Checklist
+- [ ] Player movement feels smooth in L3
+- [ ] Wall walking transitions are responsive
+- [ ] Input feels immediate, not delayed
+- [ ] Camera rotation is smooth
+- [ ] No stuttering when changing time levels
