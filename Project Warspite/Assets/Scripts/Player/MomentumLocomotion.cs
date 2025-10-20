@@ -23,6 +23,7 @@ namespace Warspite.Player
         [SerializeField] private float wallBounceFactor = 0.3f;
 
         private CharacterController controller;
+        private WallWalking wallWalking; // Optional wall walking component
         private Vector3 velocity;
         private Vector3 lastMoveDirection;
         private bool isGrounded;
@@ -33,6 +34,7 @@ namespace Warspite.Player
         void Awake()
         {
             controller = GetComponent<CharacterController>();
+            wallWalking = GetComponent<WallWalking>(); // Optional
         }
 
         void Update()
@@ -48,9 +50,12 @@ namespace Warspite.Player
 
         private void CheckGrounded()
         {
+            // Use gravity direction for ground check (works on walls/ceiling)
+            Vector3 downDirection = wallWalking != null ? wallWalking.GravityDirection : Vector3.down;
+            
             isGrounded = Physics.Raycast(
                 transform.position,
-                Vector3.down,
+                downDirection,
                 groundCheckDistance + controller.height * 0.5f
             );
         }
@@ -71,12 +76,17 @@ namespace Warspite.Player
             }
 
             Transform camTransform = mainCam.transform;
-            Vector3 forward = Vector3.ProjectOnPlane(camTransform.forward, Vector3.up).normalized;
-            Vector3 right = Vector3.ProjectOnPlane(camTransform.right, Vector3.up).normalized;
+            
+            // Get the "up" direction (opposite of gravity)
+            Vector3 upDirection = wallWalking != null ? -wallWalking.GravityDirection : Vector3.up;
+            
+            // Project camera directions onto the current "ground plane"
+            Vector3 forward = Vector3.ProjectOnPlane(camTransform.forward, upDirection).normalized;
+            Vector3 right = Vector3.ProjectOnPlane(camTransform.right, upDirection).normalized;
             Vector3 desiredMoveDir = (forward * inputDir.z + right * inputDir.x).normalized;
 
-            // Calculate horizontal velocity (preserve vertical for gravity)
-            Vector3 horizontalVelocity = new Vector3(velocity.x, 0, velocity.z);
+            // Calculate velocity in the plane perpendicular to gravity
+            Vector3 horizontalVelocity = Vector3.ProjectOnPlane(velocity, upDirection);
 
             if (desiredMoveDir.sqrMagnitude > 0.01f)
             {
@@ -100,20 +110,44 @@ namespace Warspite.Player
                 );
             }
 
-            // Apply back to velocity
-            velocity.x = horizontalVelocity.x;
-            velocity.z = horizontalVelocity.z;
+            // Combine horizontal movement with gravity component
+            Vector3 gravityComponent = Vector3.Project(velocity, upDirection);
+            velocity = horizontalVelocity + gravityComponent;
         }
 
         private void ApplyGravity()
         {
-            if (isGrounded && velocity.y < 0)
+            // Use custom gravity from WallWalking if available
+            if (wallWalking != null && wallWalking.IsWallWalking)
             {
-                velocity.y = -2f; // Small downward force to keep grounded
+                Vector3 gravityVector = wallWalking.GetGravityVector();
+                Vector3 upDirection = -wallWalking.GravityDirection;
+                
+                // Get velocity component in gravity direction
+                float verticalSpeed = Vector3.Dot(velocity, upDirection);
+                
+                if (isGrounded && verticalSpeed < 0)
+                {
+                    // Grounded - apply small stick force
+                    velocity += wallWalking.GravityDirection * 2f * Time.deltaTime;
+                }
+                else
+                {
+                    // In air - apply full gravity
+                    velocity += gravityVector * Time.deltaTime;
+                }
             }
             else
             {
-                velocity.y -= gravity * Time.deltaTime;
+                // Default gravity behavior
+                if (isGrounded && velocity.y < 0)
+                {
+                    velocity.y = -2f; // Small downward force to keep grounded
+                }
+                else
+                {
+                    velocity.y -= gravity * Time.deltaTime;
+                }
             }
         }
 

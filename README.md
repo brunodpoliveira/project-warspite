@@ -102,6 +102,18 @@ We only want to answer one question:
    - **Visual feedback**: Orange trail → Cyan glowing shockwave travels through → Trail fades
    - Risk/reward: Must stay ahead of shockwave or take damage, can lead it through enemies
 
+11. **Wall Walking**
+   - Add `WallWalking` component to player for surface traversal in L3 time dilation
+   - **Button prompt system**: Press E near walls to activate (prevents auto-stick frustration)
+   - Detects nearby surfaces (walls, ceilings, floors) within 2m
+   - **Manual activation**: Player chooses when to wall walk (no auto-climbing fountains!)
+   - **Dynamic gravity**: Gravity direction rotates to match surface orientation
+   - **Smooth transitions**: Player smoothly rotates between surfaces
+   - **Toggle on/off**: Press E again to exit wall walking and return to normal
+   - Only available in deepest time dilation (L3) for maximum control
+   - Integrates with `MomentumLocomotion` for seamless movement
+   - Visual feedback: Green sphere shows available surface, yellow line to prompt location
+
 ---
 
 ## Time Dilation Implementation Options 
@@ -171,9 +183,20 @@ We only want to answer one question:
   - Strategic gameplay: Stay ahead of wave, lead it through enemies, plan escape routes
   - Risk/reward: Powerful area attack but can catch player if they slow down or backtrack
 
-### Visual Feedback (Planned)
-1. **Wall Walking**
-   - When player is in maximum time dilation, player can walk along a wall's surface if they choose to
+- **Wall Walking**: Manual surface traversal with button prompt
+  - Available in deepest time dilation (L3) only
+  - **Button prompt**: Press E near walls to activate/deactivate (default key)
+  - Detects nearby surfaces (walls, ceilings, floors) within 2m
+  - **Manual control**: Player chooses when to wall walk (prevents auto-stick to objects)
+  - **Gravity manipulation**: Gravity direction rotates to point away from surface
+  - **Player orientation**: Character rotates to align "up" with surface normal
+  - **Smooth transitions**: 5x/sec interpolation between orientations
+  - **Multi-surface detection**: 6-directional raycasts (forward, back, left, right, up, down)
+  - **Minimum wall angle**: 45° from ground to be considered "wall"
+  - **Toggle system**: Press E again to exit and return to normal gravity
+  - Integrates with momentum-based movement system
+  - Visual debug: Green sphere at prompt position, yellow line to available surface
+  - Allows creative traversal and combat positioning without frustration
 
 ### Design Philosophy: Push-Forward Combat
 The implemented systems create a "push-forward" mentality:
@@ -182,6 +205,7 @@ The implemented systems create a "push-forward" mentality:
 - Melee combat provides immediate damage option
 - Audio Pulse rewards constant movement with powerful attacks
 - Sonic Boom adds risk/reward to high-speed movement and strategic positioning
+- Wall Walking enables creative positioning and flanking in L3 time dilation
 - Doomed tagging prevents wasting resources on already-defeated enemies
 - Time dilation resource management encourages strategic aggression
 
