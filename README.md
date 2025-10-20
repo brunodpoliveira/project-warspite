@@ -96,10 +96,11 @@ We only want to answer one question:
    - Creates **trail of wake segments** along entire high-speed path (like jet contrail)
    - New segment spawned every 0.5m traveled at high speed
    - Each segment damages anything it touches (50 damage/second)
+   - **Grace period**: Player immune to own wake for 0.5s after activation
    - **Trail tunnel concept**: Player at front, boom at back, damage throughout
-   - **Bleedover period**: Trail continues for 1.5s after dropping below speed threshold
+   - **Bleedover period**: Existing trail persists and turns red for 1.5s after speed drop (no new segments)
    - **Auto-dissipation**: Each segment fades after 2 seconds of existence
-   - Visual feedback: Orange trail → Red during bleedover → Fades out
+   - Visual feedback: Orange trail (active) → Red (bleedover) → Fades out (dissipation)
    - Risk/reward: leaves dangerous path behind, enemies can be caught in trail
 
 ---
@@ -162,12 +163,13 @@ We only want to answer one question:
   - Activates when moving fast (8+ m/s) in deepest time dilation (L3)
   - Creates trail of wake segments (one every 0.5m traveled)
   - Each segment is a damaging sphere (2m radius, 50 damage/second in 0.5s ticks)
+  - **Grace period**: Player immune to own wake for 0.5s after activation (prevents instant death)
   - **Trail tunnel concept**: Entire path becomes dangerous zone
   - Player leaves trail behind like jet contrail
   - Enemies caught in trail path take continuous damage
-  - **Bleedover mechanic**: Trail continues 1.5s after speed drops (prevents toggling exploit)
-  - **Segment dissipation**: Each segment fades after 2s lifetime
-  - Visual feedback: Orange trail → Red (bleedover) → Fades and shrinks
+  - **Bleedover mechanic**: When speed drops, NO new segments created, existing trail persists 1.5s and turns red
+  - **Segment dissipation**: Each segment fades after 2s lifetime from creation
+  - Visual feedback: Orange trail (active) → All turn red (bleedover) → Individual fade/shrink (dissipation)
   - Strategic gameplay: plan routes carefully, use trail to damage enemies, avoid backtracking
   - Risk/reward: creates area denial, but can trap player if not careful
 

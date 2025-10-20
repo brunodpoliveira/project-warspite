@@ -53,8 +53,11 @@ namespace Warspite.Player
         private Vector3 lastSegmentPosition;
         private float distanceSinceLastSegment;
         private float speedDroppedBelowThresholdTime;
+        private float boomActivationTime;
         private bool isInBleedover = false;
         private System.Collections.Generic.Dictionary<GameObject, float> lastDamageTimes = new System.Collections.Generic.Dictionary<GameObject, float>();
+        
+        private const float PLAYER_GRACE_PERIOD = 0.5f; // Player immune to own wake for this duration after activation
 
         // Public properties
         public bool HasActiveBoom => hasBoomActive;
@@ -87,9 +90,13 @@ namespace Warspite.Player
                 if (!hasBoomActive)
                 {
                     hasBoomActive = true;
-                    lastSegmentPosition = transform.position;
+                    boomActivationTime = Time.time;
+                    // Start segment position behind player to avoid immediate self-damage
+                    Vector3 velocity = locomotion.Velocity;
+                    Vector3 direction = velocity.magnitude > 0.1f ? velocity.normalized : transform.forward;
+                    lastSegmentPosition = transform.position - direction * (segmentSpacing * 2f);
                     distanceSinceLastSegment = 0f;
-                    Debug.Log("Sonic boom activated!");
+                    Debug.Log("Sonic boom activated - player has grace period!");
                 }
                 
                 // Create trail segments as player moves
@@ -101,12 +108,12 @@ namespace Warspite.Player
             else if (hasBoomActive)
             {
                 // Check if we should enter bleedover period
-                if (!isInBleedover && !meetsSpeedThreshold)
+                if (!isInBleedover)
                 {
-                    // Just dropped below speed threshold
+                    // Just dropped below speed threshold - stop creating new segments
                     isInBleedover = true;
                     speedDroppedBelowThresholdTime = Time.time;
-                    Debug.Log("Sonic boom entering bleedover period");
+                    Debug.Log("Sonic boom entering bleedover period - no new segments, existing trail will dissipate");
                 }
                 
                 // Check if bleedover period has expired
@@ -115,16 +122,12 @@ namespace Warspite.Player
                     float bleedoverElapsed = Time.time - speedDroppedBelowThresholdTime;
                     if (bleedoverElapsed >= bleedoverDuration)
                     {
-                        // Stop creating new segments, but keep existing ones
+                        // Bleedover ended, deactivate boom
                         hasBoomActive = false;
                         isInBleedover = false;
                         Debug.Log("Sonic boom bleedover ended");
                     }
-                    else
-                    {
-                        // Continue creating segments during bleedover (player's last position)
-                        CreateTrailSegments(true);
-                    }
+                    // During bleedover: DO NOT create new segments, just let existing ones persist and fade
                 }
             }
 
@@ -161,7 +164,7 @@ namespace Warspite.Player
             return true;
         }
 
-        private void CreateTrailSegments(bool isBleedoverSegment)
+        private void CreateTrailSegments(bool unused)
         {
             // Track distance traveled since last segment
             Vector3 currentPosition = transform.position;
@@ -175,8 +178,8 @@ namespace Warspite.Player
                 {
                     position = lastSegmentPosition,
                     creationTime = Time.time,
-                    isBleedover = isBleedoverSegment,
-                    visualObject = CreateSegmentVisual(lastSegmentPosition, isBleedoverSegment)
+                    isBleedover = false, // All segments created during active movement
+                    visualObject = CreateSegmentVisual(lastSegmentPosition)
                 };
 
                 wakeSegments.Add(segment);
@@ -186,10 +189,10 @@ namespace Warspite.Player
             lastSegmentPosition = currentPosition;
         }
 
-        private GameObject CreateSegmentVisual(Vector3 position, bool isBleedover)
+        private GameObject CreateSegmentVisual(Vector3 position)
         {
             GameObject segmentObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            segmentObj.name = isBleedover ? "WakeSegment_Bleedover" : "WakeSegment";
+            segmentObj.name = "WakeSegment";
             segmentObj.transform.position = position;
             segmentObj.transform.localScale = Vector3.one * wakeRadius * 2f;
 
@@ -198,7 +201,7 @@ namespace Warspite.Player
             if (renderer != null)
             {
                 Material mat = new Material(Shader.Find("Standard"));
-                mat.color = isBleedover ? dangerColor : wakeColor;
+                mat.color = wakeColor;
                 mat.SetFloat("_Mode", 3); // Transparent mode
                 mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
                 mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
@@ -253,7 +256,8 @@ namespace Warspite.Player
             float fadeProgress = age / segmentLifetime;
             float alpha = (1f - fadeProgress) * 0.5f; // Max 0.5 transparency
 
-            Color color = segment.isBleedover ? dangerColor : wakeColor;
+            // Determine color: red if in bleedover period, orange otherwise
+            Color color = isInBleedover ? dangerColor : wakeColor;
             color.a = alpha;
             renderer.material.color = color;
 
@@ -280,6 +284,15 @@ namespace Warspite.Player
                     Health targetHealth = col.GetComponent<Health>();
                     if (targetHealth != null && !targetHealth.IsDead)
                     {
+                        // Check if this is the player
+                        bool isPlayer = target == gameObject;
+                        
+                        // Skip player damage during grace period
+                        if (isPlayer && Time.time - boomActivationTime < PLAYER_GRACE_PERIOD)
+                        {
+                            continue;
+                        }
+                        
                         // Check if enough time has passed since last damage to this target
                         float lastDamage = 0f;
                         if (lastDamageTimes.ContainsKey(target))
@@ -294,8 +307,6 @@ namespace Warspite.Player
                             targetHealth.TakeDamage(damage);
                             lastDamageTimes[target] = Time.time;
 
-                            // Check if this is the player
-                            bool isPlayer = target == gameObject;
                             string targetName = isPlayer ? "Player" : target.name;
                             
                             Debug.Log($"Sonic boom wake hit {targetName} for {damage} damage!");
@@ -329,21 +340,22 @@ namespace Warspite.Player
         {
             if (wakeSegments.Count == 0) return;
 
+            // Determine color based on current state
+            Color lineColor = isInBleedover ? dangerColor : wakeColor;
+
             // Draw lines connecting segments to show the trail
             for (int i = 0; i < wakeSegments.Count - 1; i++)
             {
                 WakeSegment current = wakeSegments[i];
                 WakeSegment next = wakeSegments[i + 1];
                 
-                Color lineColor = current.isBleedover ? dangerColor : wakeColor;
                 Debug.DrawLine(current.position, next.position, lineColor);
             }
 
-            // Draw connection from last segment to player if active
-            if (hasBoomActive && wakeSegments.Count > 0)
+            // Draw connection from last segment to player if active and not in bleedover
+            if (hasBoomActive && !isInBleedover && wakeSegments.Count > 0)
             {
                 WakeSegment lastSegment = wakeSegments[wakeSegments.Count - 1];
-                Color lineColor = isInBleedover ? dangerColor : wakeColor;
                 Debug.DrawLine(lastSegment.position, transform.position, lineColor);
             }
         }
@@ -352,24 +364,24 @@ namespace Warspite.Player
         {
             if (!showDebugGizmos || wakeSegments.Count == 0) return;
 
+            // Determine color based on current state
+            Gizmos.color = isInBleedover ? dangerColor : wakeColor;
+
             // Draw all wake segments in editor
             foreach (WakeSegment segment in wakeSegments)
             {
-                Gizmos.color = segment.isBleedover ? dangerColor : wakeColor;
                 Gizmos.DrawWireSphere(segment.position, wakeRadius);
             }
 
             // Draw trail path
             for (int i = 0; i < wakeSegments.Count - 1; i++)
             {
-                Gizmos.color = wakeSegments[i].isBleedover ? dangerColor : wakeColor;
                 Gizmos.DrawLine(wakeSegments[i].position, wakeSegments[i + 1].position);
             }
 
-            // Draw line from last segment to player if active
-            if (hasBoomActive && wakeSegments.Count > 0)
+            // Draw line from last segment to player if active and not in bleedover
+            if (hasBoomActive && !isInBleedover && wakeSegments.Count > 0)
             {
-                Gizmos.color = isInBleedover ? dangerColor : wakeColor;
                 Gizmos.DrawLine(wakeSegments[wakeSegments.Count - 1].position, transform.position);
             }
         }
