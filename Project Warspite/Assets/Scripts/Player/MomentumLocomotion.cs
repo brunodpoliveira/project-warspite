@@ -66,12 +66,19 @@ namespace Warspite.Player
             float h = Input.GetAxisRaw("Horizontal");
             float v = Input.GetAxisRaw("Vertical");
             Vector3 inputDir = new Vector3(h, 0, v).normalized;
+            
+            // Debug logging
+            if (wallWalking != null && wallWalking.IsWallWalking && inputDir.sqrMagnitude > 0.01f)
+            {
+                Debug.Log($"Wall-walking input: h={h}, v={v}, inputDir={inputDir}");
+            }
 
             // Transform input to world space relative to camera
             Camera mainCam = Camera.main;
             if (mainCam == null)
             {
-                Debug.LogError("MomentumLocomotion: No camera tagged as 'MainCamera' found!");
+                if (inputDir.sqrMagnitude > 0.01f)
+                    Debug.LogError("MomentumLocomotion: No camera tagged as 'MainCamera' found!");
                 return;
             }
 
@@ -80,10 +87,28 @@ namespace Warspite.Player
             // Get the "up" direction (opposite of gravity)
             Vector3 upDirection = wallWalking != null ? -wallWalking.GravityDirection : Vector3.up;
             
-            // Project camera directions onto the current "ground plane"
-            Vector3 forward = Vector3.ProjectOnPlane(camTransform.forward, upDirection).normalized;
-            Vector3 right = Vector3.ProjectOnPlane(camTransform.right, upDirection).normalized;
+            // When wall-walking, use character's orientation instead of camera
+            Vector3 forward, right;
+            if (wallWalking != null && wallWalking.IsWallWalking)
+            {
+                // Use character's forward/right which are aligned to the wall surface
+                forward = transform.forward;
+                right = transform.right;
+            }
+            else
+            {
+                // Normal movement: project camera directions onto the ground plane
+                forward = Vector3.ProjectOnPlane(camTransform.forward, upDirection).normalized;
+                right = Vector3.ProjectOnPlane(camTransform.right, upDirection).normalized;
+            }
+            
             Vector3 desiredMoveDir = (forward * inputDir.z + right * inputDir.x).normalized;
+            
+            // Debug logging for wall-walking
+            if (wallWalking != null && wallWalking.IsWallWalking && inputDir.sqrMagnitude > 0.01f)
+            {
+                Debug.Log($"Wall-walking movement: upDir={upDirection}, forward={forward}, right={right}, desiredDir={desiredMoveDir}");
+            }
 
             // Calculate velocity in the plane perpendicular to gravity
             Vector3 horizontalVelocity = Vector3.ProjectOnPlane(velocity, upDirection);
@@ -113,6 +138,12 @@ namespace Warspite.Player
             // Combine horizontal movement with gravity component
             Vector3 gravityComponent = Vector3.Project(velocity, upDirection);
             velocity = horizontalVelocity + gravityComponent;
+            
+            // Debug final velocity
+            if (wallWalking != null && wallWalking.IsWallWalking && inputDir.sqrMagnitude > 0.01f)
+            {
+                Debug.Log($"Wall-walking velocity: horizontal={horizontalVelocity}, gravity={gravityComponent}, final={velocity}");
+            }
         }
 
         private void ApplyGravity()

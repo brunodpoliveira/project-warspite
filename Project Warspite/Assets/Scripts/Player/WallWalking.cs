@@ -22,7 +22,7 @@ namespace Warspite.Player
 
         [Header("Activation")]
         [SerializeField] private KeyCode wallWalkKey = KeyCode.E;
-        [SerializeField] private bool requireDeepestSlow = true;
+        [SerializeField] private bool requireDeepestSlow = false; // Disabled for debugging
         [SerializeField] private float promptDistance = 2f; // Distance to show prompt
 
         [Header("Transition Settings")]
@@ -179,7 +179,12 @@ namespace Warspite.Player
 
             isWallWalking = true;
             AlignToSurface(availableSurfaceNormal);
-            Debug.Log("Wall walking activated!");
+            
+            // Instantly snap to wall orientation
+            currentGravityDirection = targetGravityDirection;
+            transform.rotation = targetRotation;
+            
+            Debug.Log($"Wall walking activated! Surface normal: {availableSurfaceNormal}, Gravity direction: {targetGravityDirection}");
         }
 
         private void MaintainWallWalking()
@@ -300,27 +305,32 @@ namespace Warspite.Player
             {
                 targetRotation = Quaternion.LookRotation(forward, surfaceNormal);
             }
-
-            // Check if we're on a wall (not normal ground)
-            float angleFromUp = Vector3.Angle(surfaceNormal, Vector3.up);
-            isWallWalking = angleFromUp >= minWallAngle;
         }
 
         private void UpdateGravityAndRotation()
         {
-            // Smoothly interpolate gravity direction
-            currentGravityDirection = Vector3.Lerp(
-                currentGravityDirection,
-                targetGravityDirection,
-                rotationSpeed * Time.deltaTime
-            ).normalized;
+            // When wall-walking, snap instantly. When exiting, smooth transition back to normal
+            if (isWallWalking)
+            {
+                // Instant snap while wall-walking for responsive feel
+                currentGravityDirection = targetGravityDirection;
+                transform.rotation = targetRotation;
+            }
+            else
+            {
+                // Smooth transition when exiting wall-walking
+                currentGravityDirection = Vector3.Lerp(
+                    currentGravityDirection,
+                    targetGravityDirection,
+                    rotationSpeed * Time.deltaTime
+                ).normalized;
 
-            // Smoothly interpolate rotation
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation,
-                targetRotation,
-                rotationSpeed * Time.deltaTime
-            );
+                transform.rotation = Quaternion.Slerp(
+                    transform.rotation,
+                    targetRotation,
+                    rotationSpeed * Time.deltaTime
+                );
+            }
         }
 
         /// <summary>
