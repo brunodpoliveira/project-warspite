@@ -18,9 +18,6 @@ namespace Warspite.UI
         [SerializeField] private KeyCode damageKey = KeyCode.T;
         [SerializeField] private KeyCode healKey = KeyCode.Y;
         [SerializeField] private KeyCode killKey = KeyCode.U;
-        
-        [Header("Debug")]
-        [SerializeField] private bool showDebugInfo = true;
 
         void Update()
         {
@@ -58,17 +55,7 @@ namespace Warspite.UI
                 {
                     health.TakeDamage(damageAmount);
                     count++;
-                    
-                    if (showDebugInfo)
-                    {
-                        Debug.Log($"Damaged {health.gameObject.name}: {health.CurrentHealth}/{health.MaxHealth} HP");
-                    }
                 }
-            }
-            
-            if (showDebugInfo)
-            {
-                Debug.Log($"Damaged {count} enemies for {damageAmount} damage");
             }
         }
 
@@ -90,17 +77,7 @@ namespace Warspite.UI
                 {
                     health.Heal(healAmount);
                     count++;
-                    
-                    if (showDebugInfo)
-                    {
-                        Debug.Log($"Healed {health.gameObject.name}: {health.CurrentHealth}/{health.MaxHealth} HP");
-                    }
                 }
-            }
-            
-            if (showDebugInfo)
-            {
-                Debug.Log($"Healed {count} enemies for {healAmount} HP");
             }
         }
 
@@ -122,17 +99,7 @@ namespace Warspite.UI
                 {
                     health.TakeDamage(health.CurrentHealth);
                     count++;
-                    
-                    if (showDebugInfo)
-                    {
-                        Debug.Log($"Killed {health.gameObject.name}");
-                    }
                 }
-            }
-            
-            if (showDebugInfo)
-            {
-                Debug.Log($"Killed {count} enemies");
             }
         }
 

@@ -106,7 +106,6 @@ namespace Warspite.Player
                     Vector3 direction = velocity.magnitude > 0.1f ? velocity.normalized : transform.forward;
                     lastSegmentPosition = transform.position - direction * (segmentSpacing * 2f);
                     distanceSinceLastSegment = 0f;
-                    Debug.Log("Sonic boom activated - player has grace period!");
                 }
                 
                 // Create trail segments as player moves
@@ -124,7 +123,6 @@ namespace Warspite.Player
                     isInBleedover = true;
                     speedDroppedBelowThresholdTime = Time.time;
                     SpawnShockwave();
-                    Debug.Log("Sonic boom entering bleedover period - shockwave spawned!");
                 }
                 
                 // Check if bleedover period has expired
@@ -136,7 +134,6 @@ namespace Warspite.Player
                         // Bleedover ended, deactivate boom
                         hasBoomActive = false;
                         isInBleedover = false;
-                        Debug.Log("Sonic boom bleedover ended");
                     }
                 }
             }
@@ -284,7 +281,6 @@ namespace Warspite.Player
             // Don't spawn if no segments exist
             if (wakeSegments.Count == 0)
             {
-                Debug.Log("No segments to spawn shockwave through");
                 return;
             }
 
@@ -295,8 +291,6 @@ namespace Warspite.Player
                 damagedTargets = new System.Collections.Generic.HashSet<GameObject>(),
                 visualObject = CreateShockwaveVisual()
             };
-
-            Debug.Log($"Shockwave spawned at segment 0 of {wakeSegments.Count}");
         }
 
         private void UpdateShockwave()
@@ -341,7 +335,6 @@ namespace Warspite.Player
                     Destroy(activeShockwave.visualObject);
                 }
                 activeShockwave = null;
-                Debug.Log("Shockwave reached end of tunnel");
                 return;
             }
 
@@ -399,9 +392,6 @@ namespace Warspite.Player
                     // Deal damage once
                     targetHealth.TakeDamage(shockwaveDamage);
                     activeShockwave.damagedTargets.Add(target);
-
-                    string targetName = isPlayer ? "Player" : target.name;
-                    Debug.Log($"Shockwave hit {targetName} for {shockwaveDamage} damage!");
 
                     // Spawn visual effect
                     if (spawnShockwaveEffect)

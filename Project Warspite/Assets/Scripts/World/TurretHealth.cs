@@ -41,14 +41,11 @@ namespace Warspite.World
 
                 // Destroy the projectile
                 Destroy(projectile.gameObject);
-
-                Debug.Log($"Turret hit by thrown projectile! Health: {health.CurrentHealth}/{health.MaxHealth}");
             }
         }
 
         private void OnTurretDestroyed()
         {
-            Debug.Log("Turret destroyed!");
 
             // Disable turret firing
             if (disableTurretOnDeath && turret != null)

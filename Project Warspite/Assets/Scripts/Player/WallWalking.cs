@@ -28,7 +28,6 @@ namespace Warspite.Player
         [Header("Transition Settings")]
         [SerializeField] private float rotationSpeed = 10f; // Increased for more responsive transitions
         [SerializeField] private float gravityStrength = 20f;
-        [SerializeField] private float exitAngleThreshold = 30f; // Angle to auto-exit wall walking
 
         [Header("Visual Feedback")]
         [SerializeField] private bool showDebugGizmos = true;
@@ -183,8 +182,6 @@ namespace Warspite.Player
             // Instantly snap to wall orientation
             currentGravityDirection = targetGravityDirection;
             transform.rotation = targetRotation;
-            
-            Debug.Log($"Wall walking activated! Surface normal: {availableSurfaceNormal}, Gravity direction: {targetGravityDirection}");
         }
 
         private void MaintainWallWalking()
@@ -228,7 +225,6 @@ namespace Warspite.Player
                 // If no surface found, exit wall walking
                 if (!foundNearby)
                 {
-                    Debug.Log("Lost surface contact - exiting wall walking");
                     ExitWallWalking();
                 }
             }
@@ -240,7 +236,6 @@ namespace Warspite.Player
             targetGravityDirection = Vector3.down;
             targetRotation = Quaternion.identity;
             hasAvailableSurface = false;
-            Debug.Log("Wall walking deactivated!");
         }
 
         private void CheckForNearbyWalls()

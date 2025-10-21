@@ -80,11 +80,6 @@ namespace Warspite.UI
             healthBar.Initialize(health, transform);
             healthBar.SetOffset(offset);
             healthBar.SetSize(size);
-            
-            Debug.Log($"AutoHealthBar: Created health bar for {gameObject.name}");
-            Debug.Log($"  - Health Bar GameObject: {barObj.name}");
-            Debug.Log($"  - Parent Canvas: {worldCanvas.name}");
-            Debug.Log($"  - Health: {health.CurrentHealth}/{health.MaxHealth}");
         }
 
         /// <summary>

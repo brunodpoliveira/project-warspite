@@ -143,8 +143,6 @@ namespace Warspite.UI
             // Track it
             activeHealthBars[targetHealth] = healthBar;
             
-            Debug.Log($"Created health bar for {targetHealth.gameObject.name}");
-            
             return healthBar;
         }
 
@@ -214,8 +212,6 @@ namespace Warspite.UI
             // This will be used as our "prefab"
             healthBarPrefab = template;
             template.SetActive(false);
-            
-            Debug.Log("Created default health bar prefab");
         }
 
         /// <summary>

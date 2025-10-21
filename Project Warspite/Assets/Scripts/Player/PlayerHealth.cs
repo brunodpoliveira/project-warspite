@@ -108,7 +108,6 @@ namespace Warspite.Player
                     // Kill enemy
                     enemyHealth.TakeDamage(enemyHealth.CurrentHealth);
 
-                    Debug.Log($"Sucked enemy for {healAmount} health");
                     break; // Only suck one enemy per press
                 }
             }

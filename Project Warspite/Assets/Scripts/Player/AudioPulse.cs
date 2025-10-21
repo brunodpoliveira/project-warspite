@@ -146,8 +146,6 @@ namespace Warspite.Player
                     {
                         targetHealth.TakeDamage(pulseDamage);
                         hitCount++;
-
-                        Debug.Log($"Audio Pulse hit {col.gameObject.name} for {pulseDamage} damage!");
                     }
 
                     // Apply knockback
@@ -163,8 +161,6 @@ namespace Warspite.Player
             // Consume charge
             currentCharge = 0f;
             distanceTraveled = 0f;
-
-            Debug.Log($"Audio Pulse fired! Hit {hitCount} targets. Distance traveled: {distanceTraveled:F1}m");
 
             // TODO: Add visual/audio effects here
             // - Shockwave particle effect

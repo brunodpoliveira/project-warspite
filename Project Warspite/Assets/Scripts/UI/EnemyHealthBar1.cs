@@ -68,8 +68,6 @@ namespace Warspite.UI
             UpdateHealthBar();
             
             isInitialized = true;
-            
-            Debug.Log($"EnemyHealthBar initialized for {targetTransform.name} at position {transform.position}");
         }
 
         private void CreateUIElements()

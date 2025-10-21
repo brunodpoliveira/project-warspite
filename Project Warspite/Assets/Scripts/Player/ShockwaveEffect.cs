@@ -10,7 +10,6 @@ namespace Warspite.Player
     public class ShockwaveEffect : MonoBehaviour
     {
         [Header("Shockwave Settings")]
-        [SerializeField] private float expandSpeed = 10f;
         [SerializeField] private float maxRadius = 5f;
         [SerializeField] private float lifetime = 1f;
         [SerializeField] private AnimationCurve opacityCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);

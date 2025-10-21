@@ -124,8 +124,6 @@ namespace Warspite.Player
                 Health targetHealth = hit.collider.GetComponent<Health>();
                 if (targetHealth != null && !targetHealth.IsDead)
                 {
-                    Debug.Log($"Punch hit {hit.collider.gameObject.name} - Health before: {targetHealth.CurrentHealth}/{targetHealth.MaxHealth}");
-                    
                     // Check if lethal and mark as doomed
                     DoomedTag doomedTag = hit.collider.GetComponent<DoomedTag>();
                     if (doomedTag != null && punchDamage >= targetHealth.CurrentHealth)
@@ -135,7 +133,6 @@ namespace Warspite.Player
 
                     // Deal damage
                     targetHealth.TakeDamage(punchDamage);
-                    Debug.Log($"Punched {hit.collider.gameObject.name} for {punchDamage} damage! Health after: {targetHealth.CurrentHealth}/{targetHealth.MaxHealth}");
 
                     // Apply knockback
                     if (applyKnockback)
@@ -226,8 +223,6 @@ namespace Warspite.Player
             caughtProjectile.Freeze();
             caughtProjectile.transform.SetParent(handAnchor);
             caughtProjectile.transform.localPosition = Vector3.zero;
-
-            Debug.Log("Caught projectile!");
         }
 
         private void HoldAndAim()
@@ -276,8 +271,6 @@ namespace Warspite.Player
             Vector3 throwDirection = playerCamera.transform.forward;
             caughtProjectile.Launch(throwDirection * throwSpeed);
 
-            Debug.Log("Threw projectile!");
-
             // Keep IsCaught = true for doom prediction
             caughtProjectile = null;
         }
@@ -319,12 +312,9 @@ namespace Warspite.Player
                         playerHealthComponent.Heal(drainAmount);
                     }
 
-                    Debug.Log($"Drained {col.gameObject.name} for {drainAmount} HP!");
                     return; // Only drain one enemy per press
                 }
             }
-
-            Debug.Log("No critical enemies in range to drain!");
         }
 
         #endregion

@@ -96,8 +96,6 @@ namespace Warspite.World
             HideCriticalStatus();
 
             ApplyDoomedVisualFeedback();
-
-            Debug.Log($"{gameObject.name} marked as DOOMED by {source.name}");
         }
 
         /// <summary>
@@ -109,8 +107,6 @@ namespace Warspite.World
 
             isDoomed = false;
             RemoveDoomedVisualFeedback();
-
-            Debug.Log($"{gameObject.name} no longer doomed");
         }
 
         private void ShowCriticalStatus()
