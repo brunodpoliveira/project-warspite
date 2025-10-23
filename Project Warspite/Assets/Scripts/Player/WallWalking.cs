@@ -4,7 +4,7 @@ using Warspite.Systems;
 namespace Warspite.Player
 {
     /// <summary>
-    /// Allows player to walk on walls and ceilings when in deepest time dilation (L3).
+    /// Allows player to walk on walls and ceilings when in L2 time dilation (0.20x) or deeper.
     /// Rotates player to match surface orientation and adjusts gravity direction.
     /// </summary>
     public class WallWalking : MonoBehaviour
@@ -112,10 +112,10 @@ namespace Warspite.Player
 
         private bool CheckWallWalkConditions()
         {
-            // Check if in deepest time dilation
+            // Check if in L2 time dilation (0.20x) or deeper
             if (requireDeepestSlow && timeController != null)
             {
-                return timeController.IsDeepestSlow();
+                return timeController.IsL2OrDeeper();
             }
 
             return true;

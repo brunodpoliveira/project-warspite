@@ -257,7 +257,7 @@ Transform:
   m_GameObject: {fileID: 215814230}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.2, y: 2.81, z: 13.6}
+  m_LocalPosition: {x: 5.7, y: 2.81, z: 13.6}
   m_LocalScale: {x: 1, y: 7.0894, z: 59.42702}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -981,7 +981,7 @@ Transform:
   m_GameObject: {fileID: 1024332678}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 54.33, y: 2.81, z: 9.1}
+  m_LocalPosition: {x: 50.4, y: 2.81, z: 9.1}
   m_LocalScale: {x: 1, y: 7.0894, z: 58.240356}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1514,7 +1514,7 @@ Transform:
   m_GameObject: {fileID: 1237168934}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 27.7, y: 2.81, z: 38.2}
+  m_LocalPosition: {x: 27.7, y: 2.81, z: 31.2}
   m_LocalScale: {x: 1, y: 7.0894, z: 56.470253}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1923,7 +1923,6 @@ MonoBehaviour:
   promptDistance: 2
   rotationSpeed: 5
   gravityStrength: 20
-  exitAngleThreshold: 30
   showDebugGizmos: 1
   normalColor: {r: 0, g: 1, b: 0, a: 1}
   wallWalkColor: {r: 0, g: 1, b: 1, a: 1}
@@ -2489,7 +2488,7 @@ Transform:
   m_GameObject: {fileID: 1942995965}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 27.7, y: 2.81, z: -14.9}
+  m_LocalPosition: {x: 27.7, y: 2.81, z: -9.4}
   m_LocalScale: {x: 1, y: 7.0894, z: 60.460403}
   m_ConstrainProportionsScale: 0
   m_Children: []

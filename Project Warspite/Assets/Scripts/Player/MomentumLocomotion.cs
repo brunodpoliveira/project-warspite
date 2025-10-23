@@ -166,6 +166,12 @@ namespace Warspite.Player
 
         private void HandleCollisions(CollisionFlags flags)
         {
+            // Skip wall collision handling when wall-walking (walls are walkable surfaces)
+            if (wallWalking != null && wallWalking.IsWallWalking)
+            {
+                return;
+            }
+
             // Wall bounce on high-speed collision
             if ((flags & CollisionFlags.Sides) != 0)
             {
