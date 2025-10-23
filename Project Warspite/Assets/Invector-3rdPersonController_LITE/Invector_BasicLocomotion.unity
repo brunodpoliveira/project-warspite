@@ -208,6 +208,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Warspite.UI.TurningCrosshair
   turret: {fileID: 208257048}
   crosshairTransform: {fileID: 0}
+  reloadIndicatorTransform: {fileID: 0}
   spinSpeed: 360
   readyColor: {r: 0, g: 1, b: 0, a: 1}
   chargingColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
@@ -314,11 +315,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Warspite.World.SimpleTurret
   projectilePrefab: {fileID: 0}
   projectileSize: 0.2
-  interval: 1
+  interval: 2
   muzzleSpeed: 75
   burstCount: 1
   burstDelay: 0.1
   spreadAngle: 0
+  magazineSize: 15
+  reloadTime: 1.5
+  minSpawnDistance: 1.5
   target: {fileID: 1479757053}
   trackTarget: 1
   muzzlePoint: {fileID: 0}
@@ -1325,6 +1329,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Warspite.UI.TurningCrosshair
   turret: {fileID: 1213425918}
   crosshairTransform: {fileID: 0}
+  reloadIndicatorTransform: {fileID: 0}
   spinSpeed: 360
   readyColor: {r: 0, g: 1, b: 0, a: 1}
   chargingColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
@@ -1436,6 +1441,9 @@ MonoBehaviour:
   burstCount: 5
   burstDelay: 0.1
   spreadAngle: 0
+  magazineSize: 150
+  reloadTime: 4.5
+  minSpawnDistance: 1.5
   target: {fileID: 1479757053}
   trackTarget: 1
   muzzlePoint: {fileID: 0}
@@ -1641,6 +1649,117 @@ Transform:
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 27.7, y: 2.81, z: 31.2}
   m_LocalScale: {x: 1, y: 7.0894, z: 56.470253}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!1 &1299362528
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1299362532}
+  - component: {fileID: 1299362531}
+  - component: {fileID: 1299362530}
+  - component: {fileID: 1299362529}
+  m_Layer: 0
+  m_Name: Cube (4)
+  m_TagString: Walkable
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!65 &1299362529
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1299362528}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &1299362530
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1299362528}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1299362531
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1299362528}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &1299362532
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1299362528}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 26.6, y: 3.75, z: 24}
+  m_LocalScale: {x: 1.2197, y: 7, z: 20}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1958,6 +2077,7 @@ MonoBehaviour:
   catchRadius: 2
   catchAngle: 90
   throwSpeed: 30
+  minThrowDistance: 1.5
   showTrajectory: 1
   drainRange: 3
   drainAmount: 30
@@ -2251,11 +2371,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Warspite.World.SimpleTurret
   projectilePrefab: {fileID: 0}
   projectileSize: 0.2
-  interval: 1
+  interval: 0.5
   muzzleSpeed: 75
-  burstCount: 1
+  burstCount: 3
   burstDelay: 0.1
   spreadAngle: 0
+  magazineSize: 30
+  reloadTime: 2
+  minSpawnDistance: 1.5
   target: {fileID: 1479757053}
   trackTarget: 1
   muzzlePoint: {fileID: 0}
@@ -2453,6 +2576,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Warspite.UI.TurningCrosshair
   turret: {fileID: 1860185440}
   crosshairTransform: {fileID: 0}
+  reloadIndicatorTransform: {fileID: 0}
   spinSpeed: 360
   readyColor: {r: 0, g: 1, b: 0, a: 1}
   chargingColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
@@ -2705,6 +2829,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Warspite.UI.TurningCrosshair
   turret: {fileID: 2008654463}
   crosshairTransform: {fileID: 0}
+  reloadIndicatorTransform: {fileID: 0}
   spinSpeed: 360
   readyColor: {r: 0, g: 1, b: 0, a: 1}
   chargingColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
@@ -2811,11 +2936,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Warspite.World.SimpleTurret
   projectilePrefab: {fileID: 0}
   projectileSize: 0.2
-  interval: 1
+  interval: 0.5
   muzzleSpeed: 75
-  burstCount: 1
+  burstCount: 3
   burstDelay: 0.1
   spreadAngle: 0
+  magazineSize: 30
+  reloadTime: 2
+  minSpawnDistance: 1.5
   target: {fileID: 1479757053}
   trackTarget: 1
   muzzlePoint: {fileID: 0}
@@ -2931,3 +3059,4 @@ SceneRoots:
   - {fileID: 215814234}
   - {fileID: 1942995969}
   - {fileID: 1237168938}
+  - {fileID: 1299362532}

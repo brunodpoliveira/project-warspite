@@ -31,6 +31,7 @@ namespace Warspite.Player
         [SerializeField] private float catchRadius = 2f;
         [SerializeField] private float catchAngle = 180f; // Full sphere catch (was 90)
         [SerializeField] private float throwSpeed = 30f;
+        [SerializeField] private float minThrowDistance = 1.5f; // Minimum distance to spawn projectile from player
         [SerializeField] private bool showTrajectory = true;
 
         [Header("Vampire Settings")]
@@ -237,7 +238,8 @@ namespace Warspite.Player
             if (showTrajectory && trajectoryIndicator != null && caughtProjectile != null)
             {
                 Vector3 throwDirection = playerCamera.transform.forward;
-                Vector3 startPos = caughtProjectile.transform.position;
+                // Calculate spawn position away from player
+                Vector3 startPos = handAnchor.position + throwDirection * minThrowDistance;
                 Vector3 velocity = throwDirection * throwSpeed;
                 trajectoryIndicator.ShowTrajectory(startPos, velocity, 0.1f);
             }
@@ -263,12 +265,16 @@ namespace Warspite.Player
                 trajectoryIndicator.Hide();
             }
 
+            // Calculate throw direction and spawn position
+            Vector3 throwDirection = playerCamera.transform.forward;
+            Vector3 spawnPosition = handAnchor.position + throwDirection * minThrowDistance;
+
             // Unparent and unfreeze
             caughtProjectile.transform.SetParent(null);
+            caughtProjectile.transform.position = spawnPosition;
             caughtProjectile.Unfreeze();
 
             // Throw in camera direction
-            Vector3 throwDirection = playerCamera.transform.forward;
             caughtProjectile.Launch(throwDirection * throwSpeed);
 
             // Keep IsCaught = true for doom prediction

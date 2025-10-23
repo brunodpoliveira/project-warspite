@@ -21,6 +21,11 @@ namespace Warspite.World
         [SerializeField] private float burstDelay = 0.1f;
         [SerializeField] private float spreadAngle = 0f;
 
+        [Header("Ammo System")]
+        [SerializeField] private int magazineSize = 30;
+        [SerializeField] private float reloadTime = 2f;
+        [SerializeField] private float minSpawnDistance = 1.5f; // Minimum distance to spawn projectile from turret
+
         [Header("Targeting")]
         [SerializeField] private Transform target;
         [SerializeField] private bool trackTarget = true;
@@ -31,17 +36,42 @@ namespace Warspite.World
 
         private float lastFireTime;
         private int burstsFired;
+        private int currentAmmo;
+        private bool isReloading = false;
+        private float reloadStartTime;
 
         public float LastFireTime => lastFireTime;
         public float Interval => interval;
+        public bool IsReloading => isReloading;
+        public float ReloadProgress => isReloading ? Mathf.Clamp01((Time.time - reloadStartTime) / reloadTime) : 0f;
+        public int CurrentAmmo => currentAmmo;
+        public int MagazineSize => magazineSize;
 
         void Start()
         {
             lastFireTime = Time.time - interval; // Fire immediately on start
+            currentAmmo = magazineSize; // Start with full magazine
         }
 
         void Update()
         {
+            // Check if reload is complete
+            if (isReloading)
+            {
+                if (Time.time - reloadStartTime >= reloadTime)
+                {
+                    CompleteReload();
+                }
+                return; // Don't fire while reloading
+            }
+
+            // Check if we need to reload
+            if (currentAmmo <= 0)
+            {
+                StartReload();
+                return;
+            }
+
             // Fire bursts at intervals (uses scaled time so turret slows with time dilation)
             if (Time.time - lastFireTime >= interval)
             {
@@ -67,11 +97,16 @@ namespace Warspite.World
 
         private void FireProjectile()
         {
+            // Check ammo
+            if (currentAmmo <= 0) return;
+
             // Create projectile
             GameObject proj = CreateProjectile();
             
             // Determine spawn position
             Vector3 spawnPosition;
+            Vector3 aimDirection;
+            
             if (muzzlePoint != null)
             {
                 // Use muzzle point if assigned
@@ -79,23 +114,30 @@ namespace Warspite.World
             }
             else
             {
-                // Spawn slightly in front of turret to avoid collision with turret itself
-                Vector3 spawnOffset = transform.forward * 1f + Vector3.up * 0.5f;
-                spawnPosition = transform.position + spawnOffset;
+                // Spawn in front of turret to avoid collision with turret itself
+                spawnPosition = transform.position + Vector3.up * 0.5f;
             }
-            proj.transform.position = spawnPosition;
 
-            // Calculate direction
-            Vector3 direction;
+            // Calculate initial aim direction
             if (trackTarget && target != null)
             {
-                // Aim at target from spawn position
-                direction = (target.position - spawnPosition).normalized;
+                // Calculate ballistic trajectory to target
+                aimDirection = CalculateBallisticVelocity(spawnPosition, target.position, muzzleSpeed);
+                
+                // If ballistic calculation fails (target unreachable), aim directly
+                if (aimDirection == Vector3.zero)
+                {
+                    aimDirection = (target.position - spawnPosition).normalized;
+                }
             }
             else
             {
-                direction = transform.forward;
+                aimDirection = transform.forward;
             }
+
+            // Ensure spawn position is far enough from turret
+            spawnPosition += aimDirection.normalized * minSpawnDistance;
+            proj.transform.position = spawnPosition;
 
             // Apply spread
             if (spreadAngle > 0)
@@ -103,15 +145,18 @@ namespace Warspite.World
                 float angleX = Random.Range(-spreadAngle, spreadAngle);
                 float angleY = Random.Range(-spreadAngle, spreadAngle);
                 Quaternion spread = Quaternion.Euler(angleX, angleY, 0);
-                direction = spread * direction;
+                aimDirection = spread * aimDirection;
             }
 
             // Launch
             Projectile projectile = proj.GetComponent<Projectile>();
             if (projectile != null)
             {
-                projectile.Launch(direction * muzzleSpeed);
+                projectile.Launch(aimDirection.normalized * muzzleSpeed);
             }
+
+            // Consume ammo
+            currentAmmo--;
 
             // Notify crosshair
             if (crosshair != null)
@@ -154,6 +199,65 @@ namespace Warspite.World
             }
 
             return cube;
+        }
+
+        private void StartReload()
+        {
+            isReloading = true;
+            reloadStartTime = Time.time;
+            
+            // Notify crosshair
+            if (crosshair != null)
+            {
+                crosshair.OnReloadStart();
+            }
+        }
+
+        private void CompleteReload()
+        {
+            isReloading = false;
+            currentAmmo = magazineSize;
+            
+            // Notify crosshair
+            if (crosshair != null)
+            {
+                crosshair.OnReloadComplete();
+            }
+        }
+
+        /// <summary>
+        /// Calculate ballistic trajectory velocity to hit a target.
+        /// Returns normalized direction * speed, or Vector3.zero if target is unreachable.
+        /// </summary>
+        private Vector3 CalculateBallisticVelocity(Vector3 origin, Vector3 target, float speed)
+        {
+            Vector3 toTarget = target - origin;
+            Vector3 toTargetXZ = new Vector3(toTarget.x, 0, toTarget.z);
+            float distance = toTargetXZ.magnitude;
+            float heightDiff = toTarget.y;
+
+            // Gravity
+            float gravity = Mathf.Abs(Physics.gravity.y);
+
+            // Calculate launch angle using ballistic trajectory formula
+            // We use the "low angle" solution for more direct shots
+            float speedSq = speed * speed;
+            float underRoot = speedSq * speedSq - gravity * (gravity * distance * distance + 2 * heightDiff * speedSq);
+
+            // Check if target is reachable
+            if (underRoot < 0)
+            {
+                return Vector3.zero; // Target unreachable
+            }
+
+            float root = Mathf.Sqrt(underRoot);
+            float angle = Mathf.Atan((speedSq - root) / (gravity * distance));
+
+            // Calculate velocity direction
+            Vector3 direction = toTargetXZ.normalized;
+            float verticalComponent = Mathf.Tan(angle);
+            
+            return (direction + Vector3.up * verticalComponent).normalized;
         }
     }
 }

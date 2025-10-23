@@ -14,6 +14,7 @@ namespace Warspite.UI
         [Header("References")]
         [SerializeField] private SimpleTurret turret;
         [SerializeField] private RectTransform crosshairTransform;
+        [SerializeField] private RectTransform reloadIndicatorTransform;
 
         [Header("Visual Settings")]
         [SerializeField] private float spinSpeed = 360f; // Degrees per second
@@ -23,14 +24,16 @@ namespace Warspite.UI
         [SerializeField] private float crosshairSize = 50f;
 
         [Header("Position")]
-        [SerializeField] private Vector3 offset = new Vector3(0, 2.5f, 0);
+        [SerializeField] private Vector3 offset = new Vector3(0, 0.5f, 0); // At gun level, not above head
         [SerializeField] private bool worldSpace = true;
 
         private Image crosshairImage;
+        private Image reloadIndicatorImage;
         private Canvas canvas;
         private Camera mainCamera;
         private float lastFireTime;
         private bool isReady = true;
+        private bool isReloading = false;
 
         void Awake()
         {
@@ -50,6 +53,18 @@ namespace Warspite.UI
             else
             {
                 crosshairImage = crosshairTransform.GetComponent<Image>();
+                // Find the canvas if crosshair was manually assigned
+                canvas = crosshairTransform.GetComponentInParent<Canvas>();
+            }
+
+            // Create reload indicator if not assigned
+            if (reloadIndicatorTransform == null)
+            {
+                CreateReloadIndicator();
+            }
+            else
+            {
+                reloadIndicatorImage = reloadIndicatorTransform.GetComponent<Image>();
             }
         }
 
@@ -71,8 +86,24 @@ namespace Warspite.UI
             if (turret == null || crosshairTransform == null) return;
 
             UpdatePosition();
-            UpdateRotation();
-            UpdateColor();
+            
+            // Check if turret is reloading
+            if (turret.IsReloading)
+            {
+                UpdateReloadIndicator();
+            }
+            else
+            {
+                // Ensure reload indicator is hidden when not reloading
+                if (isReloading)
+                {
+                    HideReloadIndicator();
+                    isReloading = false;
+                }
+                
+                UpdateRotation();
+                UpdateColor();
+            }
         }
 
         private void CreateCrosshair()
@@ -154,6 +185,74 @@ namespace Warspite.UI
             return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
         }
 
+        private void CreateReloadIndicator()
+        {
+            if (canvas == null) return;
+
+            // Create reload indicator image (circle that fills up)
+            GameObject reloadObj = new GameObject("ReloadIndicator");
+            reloadObj.transform.SetParent(canvas.transform);
+            reloadObj.transform.localPosition = Vector3.zero;
+            reloadObj.transform.localScale = Vector3.one;
+
+            reloadIndicatorTransform = reloadObj.AddComponent<RectTransform>();
+            reloadIndicatorTransform.sizeDelta = new Vector2(crosshairSize, crosshairSize);
+            reloadIndicatorTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            reloadIndicatorTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            reloadIndicatorTransform.pivot = new Vector2(0.5f, 0.5f);
+
+            reloadIndicatorImage = reloadObj.AddComponent<Image>();
+            reloadIndicatorImage.sprite = CreateCircleSprite();
+            reloadIndicatorImage.type = Image.Type.Filled;
+            reloadIndicatorImage.fillMethod = Image.FillMethod.Radial360;
+            reloadIndicatorImage.fillOrigin = (int)Image.Origin360.Top;
+            reloadIndicatorImage.fillClockwise = true;
+            reloadIndicatorImage.fillAmount = 0f;
+            reloadIndicatorImage.color = new Color(1f, 0.5f, 0f, 0.8f); // Orange color
+
+            reloadObj.SetActive(false);
+        }
+
+        private Sprite CreateCircleSprite()
+        {
+            // Create a simple circle texture
+            int size = 64;
+            Texture2D texture = new Texture2D(size, size);
+            Color[] pixels = new Color[size * size];
+
+            Vector2 center = new Vector2(size / 2f, size / 2f);
+            float radius = size / 2f;
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    Vector2 pos = new Vector2(x, y);
+                    float dist = Vector2.Distance(pos, center);
+                    
+                    // Create circle with smooth edge
+                    if (dist <= radius - 2)
+                    {
+                        pixels[y * size + x] = Color.white;
+                    }
+                    else if (dist <= radius)
+                    {
+                        float alpha = 1f - (dist - (radius - 2)) / 2f;
+                        pixels[y * size + x] = new Color(1, 1, 1, alpha);
+                    }
+                    else
+                    {
+                        pixels[y * size + x] = Color.clear;
+                    }
+                }
+            }
+
+            texture.SetPixels(pixels);
+            texture.Apply();
+
+            return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
+        }
+
         private void UpdatePosition()
         {
             if (!worldSpace) return;
@@ -210,6 +309,22 @@ namespace Warspite.UI
             }
         }
 
+        private void UpdateReloadIndicator()
+        {
+            if (reloadIndicatorImage == null || turret == null) return;
+
+            // Show reload indicator, hide crosshair (only once)
+            if (!isReloading)
+            {
+                isReloading = true;
+                ShowReloadIndicator();
+            }
+
+            // Update fill amount based on reload progress
+            float progress = turret.ReloadProgress;
+            reloadIndicatorImage.fillAmount = progress;
+        }
+
         /// <summary>
         /// Call this when turret fires to reset the indicator
         /// </summary>
@@ -225,6 +340,53 @@ namespace Warspite.UI
         public void SetLastFireTime(float time)
         {
             lastFireTime = time;
+        }
+
+        /// <summary>
+        /// Called when turret starts reloading
+        /// </summary>
+        public void OnReloadStart()
+        {
+            isReloading = true;
+            ShowReloadIndicator();
+        }
+
+        /// <summary>
+        /// Called when turret finishes reloading
+        /// </summary>
+        public void OnReloadComplete()
+        {
+            isReloading = false;
+            HideReloadIndicator();
+        }
+
+        private void ShowReloadIndicator()
+        {
+            if (reloadIndicatorTransform != null)
+            {
+                reloadIndicatorTransform.gameObject.SetActive(true);
+            }
+            if (crosshairTransform != null)
+            {
+                crosshairTransform.gameObject.SetActive(false);
+            }
+        }
+
+        private void HideReloadIndicator()
+        {
+            if (reloadIndicatorTransform != null)
+            {
+                reloadIndicatorTransform.gameObject.SetActive(false);
+                // Reset fill amount
+                if (reloadIndicatorImage != null)
+                {
+                    reloadIndicatorImage.fillAmount = 0f;
+                }
+            }
+            if (crosshairTransform != null)
+            {
+                crosshairTransform.gameObject.SetActive(true);
+            }
         }
     }
 }
