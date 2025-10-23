@@ -13,6 +13,7 @@ namespace Warspite.Player
         [SerializeField] private CharacterController characterController;
         [SerializeField] private TimeDilationController timeController;
         [SerializeField] private Transform cameraTransform;
+        private MomentumLocomotion momentumLocomotion;
 
         [Header("Wall Detection")]
         [SerializeField] private float wallDetectionDistance = 1.5f;
@@ -60,6 +61,8 @@ namespace Warspite.Player
 
             if (cameraTransform == null && Camera.main != null)
                 cameraTransform = Camera.main.transform;
+
+            momentumLocomotion = GetComponent<MomentumLocomotion>();
         }
 
         void Update()
@@ -177,11 +180,22 @@ namespace Warspite.Player
             if (!hasAvailableSurface) return;
 
             isWallWalking = true;
+            
+            // Store old rotation to calculate velocity rotation
+            Quaternion oldRotation = transform.rotation;
+            
             AlignToSurface(availableSurfaceNormal);
             
             // Instantly snap to wall orientation
             currentGravityDirection = targetGravityDirection;
             transform.rotation = targetRotation;
+            
+            // Preserve momentum by rotating velocity to match new orientation
+            if (momentumLocomotion != null)
+            {
+                Quaternion rotationDelta = targetRotation * Quaternion.Inverse(oldRotation);
+                momentumLocomotion.RotateVelocity(rotationDelta);
+            }
         }
 
         private void MaintainWallWalking()
@@ -232,10 +246,20 @@ namespace Warspite.Player
 
         private void ExitWallWalking()
         {
+            // Store old rotation to calculate velocity rotation
+            Quaternion oldRotation = transform.rotation;
+            
             isWallWalking = false;
             targetGravityDirection = Vector3.down;
             targetRotation = Quaternion.identity;
             hasAvailableSurface = false;
+            
+            // Preserve momentum by rotating velocity back to normal orientation
+            if (momentumLocomotion != null)
+            {
+                Quaternion rotationDelta = targetRotation * Quaternion.Inverse(oldRotation);
+                momentumLocomotion.RotateVelocity(rotationDelta);
+            }
         }
 
         private void CheckForNearbyWalls()

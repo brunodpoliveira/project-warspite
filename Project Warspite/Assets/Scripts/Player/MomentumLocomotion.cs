@@ -31,6 +31,14 @@ namespace Warspite.Player
         public Vector3 Velocity => velocity;
         public bool IsGrounded => isGrounded;
 
+        /// <summary>
+        /// Rotates the velocity vector to maintain momentum when changing orientation (e.g., wall-walking).
+        /// </summary>
+        public void RotateVelocity(Quaternion rotation)
+        {
+            velocity = rotation * velocity;
+        }
+
         void Awake()
         {
             controller = GetComponent<CharacterController>();
