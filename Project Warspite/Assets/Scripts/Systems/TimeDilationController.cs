@@ -104,5 +104,7 @@ namespace Warspite.Systems
         }
 
         public bool IsDeepestSlow() => currentLevel == 3;
+        
+        public bool IsL2OrDeeper() => currentLevel >= 2;
     }
 }
