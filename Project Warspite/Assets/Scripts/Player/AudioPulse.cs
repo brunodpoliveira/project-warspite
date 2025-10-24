@@ -98,8 +98,8 @@ namespace Warspite.Player
             }
             else if (enablePassiveCharge)
             {
-                // Passive charge when stationary (optional)
-                currentCharge += passiveChargeRate * Time.deltaTime;
+                // Passive charge when stationary (use unscaled time for consistent player ability)
+                currentCharge += passiveChargeRate * Time.unscaledDeltaTime;
             }
 
             // Clamp charge

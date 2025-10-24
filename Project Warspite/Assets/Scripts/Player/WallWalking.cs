@@ -341,13 +341,13 @@ namespace Warspite.Player
                 currentGravityDirection = Vector3.Lerp(
                     currentGravityDirection,
                     targetGravityDirection,
-                    rotationSpeed * Time.deltaTime
+                    rotationSpeed * Time.unscaledDeltaTime
                 ).normalized;
 
                 transform.rotation = Quaternion.Slerp(
                     transform.rotation,
                     targetRotation,
-                    rotationSpeed * Time.deltaTime
+                    rotationSpeed * Time.unscaledDeltaTime
                 );
             }
         }

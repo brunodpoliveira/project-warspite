@@ -52,7 +52,7 @@ namespace Warspite.Player
             ApplyGravity();
             
             // Move and handle collisions
-            CollisionFlags collisionFlags = controller.Move(velocity * Time.deltaTime);
+            CollisionFlags collisionFlags = controller.Move(velocity * Time.unscaledDeltaTime);
             HandleCollisions(collisionFlags);
         }
 
@@ -117,7 +117,7 @@ namespace Warspite.Player
                 horizontalVelocity = Vector3.MoveTowards(
                     horizontalVelocity,
                     targetVelocity,
-                    accelRate * Time.deltaTime
+                    accelRate * Time.unscaledDeltaTime
                 );
             }
             else
@@ -127,7 +127,7 @@ namespace Warspite.Player
                 horizontalVelocity = Vector3.MoveTowards(
                     horizontalVelocity,
                     Vector3.zero,
-                    decelRate * Time.deltaTime
+                    decelRate * Time.unscaledDeltaTime
                 );
             }
 
@@ -150,12 +150,12 @@ namespace Warspite.Player
                 if (isGrounded && verticalSpeed < 0)
                 {
                     // Grounded - apply small stick force
-                    velocity += wallWalking.GravityDirection * 2f * Time.deltaTime;
+                    velocity += wallWalking.GravityDirection * 2f * Time.unscaledDeltaTime;
                 }
                 else
                 {
                     // In air - apply full gravity
-                    velocity += gravityVector * Time.deltaTime;
+                    velocity += gravityVector * Time.unscaledDeltaTime;
                 }
             }
             else
@@ -167,7 +167,7 @@ namespace Warspite.Player
                 }
                 else
                 {
-                    velocity.y -= gravity * Time.deltaTime;
+                    velocity.y -= gravity * Time.unscaledDeltaTime;
                 }
             }
         }

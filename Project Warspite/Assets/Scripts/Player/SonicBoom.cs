@@ -297,8 +297,8 @@ namespace Warspite.Player
         {
             if (activeShockwave == null || wakeSegments.Count == 0) return;
 
-            // Calculate how far to move this frame
-            float distanceToMove = shockwaveSpeed * Time.deltaTime;
+            // Calculate how far to move this frame (use unscaled time for consistent player ability)
+            float distanceToMove = shockwaveSpeed * Time.unscaledDeltaTime;
             
             // Move through segments
             while (distanceToMove > 0 && activeShockwave.currentSegmentIndex < wakeSegments.Count - 1)
