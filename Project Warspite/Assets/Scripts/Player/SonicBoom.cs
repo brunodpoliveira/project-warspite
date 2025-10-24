@@ -69,7 +69,7 @@ namespace Warspite.Player
         private float timeAtHighSpeed = 0f; // Tracks how long player has been at high speed
         private bool shockwaveSpawned = false; // Tracks if shockwave has been spawned for current boom
         
-        private const float PLAYER_GRACE_PERIOD = 0.5f; // Player immune to own wake for this duration after activation
+        private const float PLAYER_GRACE_PERIOD = 0.2f; // Player immune to own wake for this duration after activation
 
         // Public properties
         public bool HasActiveBoom => hasBoomActive;
@@ -106,6 +106,8 @@ namespace Warspite.Player
                     timeAtHighSpeed = 0f;
                     shockwaveSpawned = false;
                     
+                    Debug.Log($"SonicBoom: Activated! Speed: {currentSpeed:F2}, RequireL3: {requireDeepestSlow}, IsL3: {(timeController != null ? timeController.IsDeepestSlow().ToString() : "N/A")}");
+                    
                     // Start segment position behind player to avoid immediate self-damage
                     Vector3 velocity = locomotion.Velocity;
                     Vector3 direction = velocity.magnitude > 0.1f ? velocity.normalized : transform.forward;
@@ -122,6 +124,7 @@ namespace Warspite.Player
                 // Spawn shockwave after delay (only once per boom cycle)
                 if (!shockwaveSpawned && timeAtHighSpeed >= shockwaveSpawnDelay)
                 {
+                    Debug.Log($"SonicBoom: Spawning shockwave! Time at high speed: {timeAtHighSpeed:F2}s, Segments: {wakeSegments.Count}");
                     SpawnShockwave();
                     shockwaveSpawned = true;
                 }
@@ -197,6 +200,50 @@ namespace Warspite.Player
             lastSegmentPosition = currentPosition;
         }
 
+        private Material CreateURPTransparentMaterial(Color color)
+        {
+            // Try to find URP Lit shader, fall back to Standard
+            Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null)
+            {
+                shader = Shader.Find("Standard");
+            }
+
+            Material mat = new Material(shader);
+            mat.color = color;
+
+            // URP Lit shader setup
+            if (mat.HasProperty("_Surface"))
+            {
+                mat.SetFloat("_Surface", 1); // Transparent
+                mat.SetFloat("_Blend", 0); // Alpha blend
+            }
+            // Standard shader setup
+            else if (mat.HasProperty("_Mode"))
+            {
+                mat.SetFloat("_Mode", 3); // Transparent mode
+            }
+
+            // Set blend mode
+            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            mat.SetInt("_ZWrite", 0);
+            mat.DisableKeyword("_ALPHATEST_ON");
+            mat.EnableKeyword("_ALPHABLEND_ON");
+            mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            mat.renderQueue = 3000;
+
+            // Add emission
+            if (mat.HasProperty("_EmissionColor"))
+            {
+                mat.EnableKeyword("_EMISSION");
+                mat.SetColor("_EmissionColor", color * 0.5f);
+            }
+
+            return mat;
+        }
+
         private GameObject CreateSegmentVisual(Vector3 position)
         {
             GameObject segmentObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -204,21 +251,11 @@ namespace Warspite.Player
             segmentObj.transform.position = position;
             segmentObj.transform.localScale = Vector3.one * wakeRadius * 2f;
 
-            // Make it semi-transparent
+            // Apply URP-compatible material with wake color (orange)
             Renderer renderer = segmentObj.GetComponent<Renderer>();
             if (renderer != null)
             {
-                Material mat = new Material(Shader.Find("Standard"));
-                mat.color = wakeColor;
-                mat.SetFloat("_Mode", 3); // Transparent mode
-                mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                mat.SetInt("_ZWrite", 0);
-                mat.DisableKeyword("_ALPHATEST_ON");
-                mat.EnableKeyword("_ALPHABLEND_ON");
-                mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                mat.renderQueue = 3000;
-                renderer.material = mat;
+                renderer.material = CreateURPTransparentMaterial(wakeColor);
             }
 
             // Remove collider so it doesn't interfere with physics
@@ -279,6 +316,7 @@ namespace Warspite.Player
             // Don't spawn if no segments exist
             if (wakeSegments.Count == 0)
             {
+                Debug.LogWarning("SonicBoom: Cannot spawn shockwave - no wake segments!");
                 return;
             }
 
@@ -288,14 +326,30 @@ namespace Warspite.Player
                 Destroy(activeShockwave.visualObject);
             }
 
+            GameObject shockwaveVisual = CreateShockwaveVisual();
+            Debug.Log($"SonicBoom: Shockwave created! Visual: {(shockwaveVisual != null ? shockwaveVisual.name : "NULL")}");
+
             activeShockwave = new Shockwave
             {
                 currentSegmentIndex = 0,
                 progress = 0f,
                 extensionDistance = 0f,
                 damagedTargets = new System.Collections.Generic.HashSet<GameObject>(),
-                visualObject = CreateShockwaveVisual()
+                visualObject = shockwaveVisual
             };
+            
+            // Change wake segment colors to danger (red)
+            foreach (WakeSegment segment in wakeSegments)
+            {
+                if (segment.visualObject != null)
+                {
+                    Renderer renderer = segment.visualObject.GetComponent<Renderer>();
+                    if (renderer != null && renderer.material != null)
+                    {
+                        renderer.material.color = dangerColor;
+                    }
+                }
+            }
         }
 
         private void UpdateShockwave()
@@ -416,48 +470,103 @@ namespace Warspite.Player
 
         private bool CheckShockwaveDamage(Vector3 position)
         {
-            // Find all objects within shockwave radius
-            Collider[] nearbyColliders = Physics.OverlapSphere(position, shockwaveRadius);
+            // Use 75% of visual radius for detection (balance between precision and reliability)
+            float collisionRadius = shockwaveRadius * 0.75f;
+            
+            // Find all objects within shockwave radius (ignore triggers)
+            Collider[] nearbyColliders = Physics.OverlapSphere(position, collisionRadius, ~0, QueryTriggerInteraction.Ignore);
             bool shouldStop = false;
 
             foreach (Collider col in nearbyColliders)
             {
                 GameObject target = col.gameObject;
                 
+                // Check if this is player-related for logging
+                bool isPlayerRelated = target == gameObject || target.transform.IsChildOf(transform);
+                
                 // Skip if already damaged by this shockwave
-                if (activeShockwave.damagedTargets.Contains(target)) continue;
+                if (activeShockwave.damagedTargets.Contains(target))
+                {
+                    continue;
+                }
                 
                 // Skip if this is a wake segment visual
-                if (target.name.Contains("WakeSegment") || target.name.Contains("Shockwave")) continue;
+                if (target.name.Contains("WakeSegment") || target.name.Contains("Shockwave"))
+                {
+                    continue;
+                }
+                
+                // DON'T skip player's own collider anymore - we want to damage the player!
+                // if (target == gameObject) continue;
+                
+                // Skip projectiles
+                if (target.GetComponent<Warspite.World.Projectile>() != null)
+                {
+                    continue;
+                }
 
                 // Check for walls/obstacles (anything with collider but no Health)
+                // Try to get Health from the collider, or from parent if it's a child object
                 Health targetHealth = col.GetComponent<Health>();
+                if (targetHealth == null && col.transform.parent != null)
+                {
+                    targetHealth = col.GetComponentInParent<Health>();
+                }
+                
+                // Log only for player
+                if (isPlayerRelated)
+                {
+                    Debug.Log($"SonicBoom: Found PLAYER collider: {target.name}, Health: {(targetHealth != null ? "YES (on " + (col.GetComponent<Health>() != null ? "self" : "parent") + ")" : "NO")}");
+                }
+                
                 if (targetHealth == null)
                 {
-                    // Hit a wall or obstacle - stop shockwave
-                    if (spawnShockwaveEffect)
+                    // Ignore floor (anything below the shockwave)
+                    if (target.name.ToLower().Contains("floor") || target.name.ToLower().Contains("ground"))
                     {
-                        ShockwaveEffect.SpawnShockwave(position, Color.white, shockwaveRadius);
+                        continue;
                     }
-                    shouldStop = true;
+                    
+                    // Only stop for actual walls (static colliders) that are vertical obstacles
+                    if (col.gameObject.isStatic)
+                    {
+                        // Check if this is a vertical wall (not floor/ceiling)
+                        Vector3 toWall = target.transform.position - position;
+                        float verticalComponent = Mathf.Abs(toWall.y);
+                        float horizontalComponent = new Vector2(toWall.x, toWall.z).magnitude;
+                        
+                        // Only stop if it's more horizontal than vertical (i.e., a wall, not floor)
+                        if (horizontalComponent > verticalComponent)
+                        {
+                            // Hit a wall or obstacle - stop shockwave
+                            if (spawnShockwaveEffect)
+                            {
+                                ShockwaveEffect.SpawnShockwave(position, Color.white, shockwaveRadius);
+                            }
+                            Debug.Log($"SonicBoom: Shockwave hit wall: {target.name}");
+                            shouldStop = true;
+                        }
+                    }
                     continue;
                 }
 
                 // Check for damageable targets
                 if (!targetHealth.IsDead)
                 {
-                    // Check if this is the player
-                    bool isPlayer = target == gameObject;
+                    // Check if this is the player (check root or if it's a child of player)
+                    bool isPlayer = target == gameObject || target.transform.IsChildOf(transform);
                     
-                    // Skip player damage during grace period
+                    // Skip player damage during grace period (only at boom start)
                     if (isPlayer && Time.time - boomActivationTime < PLAYER_GRACE_PERIOD)
                     {
+                        Debug.Log($"SonicBoom: Skipping player damage (grace period: {Time.time - boomActivationTime:F2}s)");
                         continue;
                     }
 
                     // Deal damage once
                     targetHealth.TakeDamage(shockwaveDamage);
                     activeShockwave.damagedTargets.Add(target);
+                    Debug.Log($"SonicBoom: Shockwave hit {(isPlayer ? "PLAYER" : "enemy")}: {target.name}, damage: {shockwaveDamage}, health remaining: {targetHealth.CurrentHealth}");
 
                     // Spawn visual effect
                     if (spawnShockwaveEffect)
@@ -469,6 +578,7 @@ namespace Warspite.Player
                     // Enemy absorbed the shockwave - stop it
                     if (!isPlayer)
                     {
+                        Debug.Log($"SonicBoom: Enemy absorbed shockwave, stopping");
                         shouldStop = true;
                     }
                 }
@@ -483,22 +593,16 @@ namespace Warspite.Player
             shockwaveObj.name = "ShockwaveVisual";
             shockwaveObj.transform.localScale = Vector3.one * shockwaveRadius * 2f;
 
-            // Make it semi-transparent and pulsing
+            // Apply URP-compatible material with shockwave color (cyan/light blue)
             Renderer renderer = shockwaveObj.GetComponent<Renderer>();
             if (renderer != null)
             {
-                Material mat = new Material(Shader.Find("Standard"));
-                mat.color = shockwaveColor;
-                mat.SetFloat("_Mode", 3); // Transparent mode
-                mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                mat.SetInt("_ZWrite", 0);
-                mat.DisableKeyword("_ALPHATEST_ON");
-                mat.EnableKeyword("_ALPHABLEND_ON");
-                mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                mat.renderQueue = 3000;
-                mat.EnableKeyword("_EMISSION");
-                mat.SetColor("_EmissionColor", shockwaveColor * 2f);
+                Material mat = CreateURPTransparentMaterial(shockwaveColor);
+                // Boost emission for shockwave
+                if (mat.HasProperty("_EmissionColor"))
+                {
+                    mat.SetColor("_EmissionColor", shockwaveColor * 2f);
+                }
                 renderer.material = mat;
             }
 

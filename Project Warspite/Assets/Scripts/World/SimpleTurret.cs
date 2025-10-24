@@ -185,16 +185,27 @@ namespace Warspite.World
             // Add Projectile script
             cube.AddComponent<Projectile>();
 
-            // Random color for visual variety
+            // Red color for tracer rounds
             Renderer renderer = cube.GetComponent<Renderer>();
             if (renderer != null)
             {
-                Material mat = new Material(Shader.Find("Standard"));
-                mat.color = new Color(
-                    Random.Range(0.5f, 1f),
-                    Random.Range(0.5f, 1f),
-                    Random.Range(0.5f, 1f)
-                );
+                // Try to find URP Lit shader, fall back to Standard
+                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+                if (shader == null)
+                {
+                    shader = Shader.Find("Standard");
+                }
+
+                Material mat = new Material(shader);
+                mat.color = Color.red;
+
+                // Add emission for glow effect
+                if (mat.HasProperty("_EmissionColor"))
+                {
+                    mat.EnableKeyword("_EMISSION");
+                    mat.SetColor("_EmissionColor", Color.red * 2f);
+                }
+
                 renderer.material = mat;
             }
 

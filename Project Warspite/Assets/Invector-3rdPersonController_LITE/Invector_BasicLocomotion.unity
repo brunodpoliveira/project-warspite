@@ -2076,7 +2076,7 @@ MonoBehaviour:
   timeController: {fileID: 1202316785}
   playerHealth: {fileID: 1479757058}
   handAnchor: {fileID: 1952324621}
-  audioPulse: {fileID: 0}
+  audioPulse: {fileID: 1479757060}
   punchRange: 2
   punchRadius: 1
   punchDamage: 25
@@ -2145,7 +2145,7 @@ MonoBehaviour:
   wakeRadius: 2
   segmentSpacing: 0.5
   segmentLifetime: 2
-  shockwaveSpawnDelay: 3
+  shockwaveSpawnDelay: 2
   shockwaveDamage: 75
   shockwaveSpeed: 15
   shockwaveRadius: 3

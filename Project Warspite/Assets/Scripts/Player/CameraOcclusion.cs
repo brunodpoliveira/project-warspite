@@ -141,10 +141,17 @@ namespace Warspite.Player
                 }
             }
 
-            // Process restoration and remove fully restored renderers
+            // Process restoration and remove fully restored or destroyed renderers
             List<Renderer> toRemove = new List<Renderer>();
             foreach (var kvp in occludedRenderers)
             {
+                // Remove if renderer was destroyed
+                if (kvp.Key == null)
+                {
+                    toRemove.Add(kvp.Key);
+                    continue;
+                }
+
                 bool fullyRestored = UpdateRestoration(kvp.Key, kvp.Value);
                 if (fullyRestored)
                 {
@@ -152,7 +159,7 @@ namespace Warspite.Player
                 }
             }
 
-            // Clean up fully restored renderers
+            // Clean up fully restored or destroyed renderers
             foreach (Renderer renderer in toRemove)
             {
                 occludedRenderers.Remove(renderer);
@@ -161,6 +168,12 @@ namespace Warspite.Player
 
         private void FadeRenderer(Renderer renderer)
         {
+            // Check if renderer still exists
+            if (renderer == null)
+            {
+                return;
+            }
+
             // Initialize material data if this is a new occluding object
             if (!occludedRenderers.ContainsKey(renderer))
             {
@@ -197,24 +210,15 @@ namespace Warspite.Player
 
             // Fade materials toward target alpha
             List<MaterialData> matDataList = occludedRenderers[renderer];
-            bool firstMaterial = true;
             foreach (MaterialData matData in matDataList)
             {
                 // Smoothly interpolate alpha
-                float previousAlpha = matData.currentAlpha;
                 matData.currentAlpha = Mathf.Lerp(matData.currentAlpha, targetAlpha, fadeSpeed * Time.unscaledDeltaTime);
 
                 // Apply alpha to material
                 Color color = matData.material.color;
                 color.a = matData.currentAlpha;
                 matData.material.color = color;
-
-                // Debug log first frame of fading (commented out to reduce spam)
-                // if (firstMaterial && Mathf.Abs(previousAlpha - matData.originalAlpha) < 0.01f)
-                // {
-                //     Debug.Log($"Starting fade on {renderer.name}: {matData.material.name} alpha {matData.originalAlpha} -> {targetAlpha}");
-                //     firstMaterial = false;
-                // }
 
                 // Also fade emission if present
                 if (matData.material.HasProperty("_EmissionColor"))
@@ -266,6 +270,12 @@ namespace Warspite.Player
 
         private bool UpdateRestoration(Renderer renderer, List<MaterialData> matDataList)
         {
+            // Check if renderer still exists
+            if (renderer == null)
+            {
+                return true; // Consider it fully restored if destroyed
+            }
+
             bool allFullyRestored = true;
 
             foreach (MaterialData matData in matDataList)
