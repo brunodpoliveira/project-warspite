@@ -14,11 +14,14 @@ namespace Warspite.Player
         [SerializeField] private MomentumLocomotion locomotion;
 
         [Header("Charge Settings")]
-        [SerializeField] private float maxCharge = 100f;
+        [SerializeField] private float basePulseCost = 100f; // Base cost for first pulse
+        [SerializeField] private float maxCharge = 1000f; // Increased to accommodate exponential costs
         [SerializeField] private float chargePerMeterMoved = 2f; // Charge gained per meter traveled
         [SerializeField] private float minSpeedForCharge = 1f; // Minimum speed to start charging
         [SerializeField] private float passiveChargeRate = 5f; // Charge per second when stationary (optional)
         [SerializeField] private bool enablePassiveCharge = false;
+        [SerializeField] private bool enableCostReset = false; // Enable cost reset after delay
+        [SerializeField] private float resetCostDelay = 5f; // Time without using pulse before cost resets
 
         [Header("Attack Settings")]
         [SerializeField] private float pulseRange = 10f;
@@ -40,12 +43,15 @@ namespace Warspite.Player
         private float lastPulseTime = -999f;
         private float distanceTraveled = 0f;
         private Vector3 lastPosition;
+        private int pulseUsageCount = 0; // Tracks consecutive pulse usage for exponential cost
 
         // Public properties for UI
         public float CurrentCharge => currentCharge;
         public float MaxCharge => maxCharge;
-        public float ChargePercent => currentCharge / maxCharge;
-        public bool IsFullyCharged => currentCharge >= maxCharge;
+        public float CurrentPulseCost => basePulseCost * Mathf.Pow(2, pulseUsageCount);
+        public int PulseUsageCount => pulseUsageCount;
+        public float ChargePercent => currentCharge / CurrentPulseCost;
+        public bool IsFullyCharged => currentCharge >= CurrentPulseCost;
         public bool CanUsePulse => IsFullyCharged && Time.time >= lastPulseTime + pulseCooldown;
 
         void Start()
@@ -72,7 +78,13 @@ namespace Warspite.Player
         {
             if (locomotion == null) return;
 
-            // Don't charge if already full
+            // Reset pulse usage count if enabled and enough time has passed without using pulse
+            if (enableCostReset && Time.time >= lastPulseTime + resetCostDelay && pulseUsageCount > 0)
+            {
+                pulseUsageCount = 0;
+            }
+
+            // Don't charge if already at max
             if (currentCharge >= maxCharge)
             {
                 currentCharge = maxCharge;
@@ -158,8 +170,14 @@ namespace Warspite.Player
                 }
             }
 
-            // Consume charge
-            currentCharge = 0f;
+            // Consume charge based on current cost
+            float cost = CurrentPulseCost;
+            currentCharge -= cost;
+            if (currentCharge < 0) currentCharge = 0;
+            
+            // Increment usage count for exponential backoff
+            pulseUsageCount++;
+            
             distanceTraveled = 0f;
 
             // TODO: Add visual/audio effects here

@@ -527,7 +527,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 5.7, y: 2.81, z: 13.6}
-  m_LocalScale: {x: 1, y: 7.0894, z: 59.42702}
+  m_LocalScale: {x: 0.1, y: 7.0894, z: 59.42702}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -803,6 +803,7 @@ GameObject:
   - component: {fileID: 736015645}
   - component: {fileID: 736015644}
   - component: {fileID: 736015643}
+  - component: {fileID: 736015649}
   m_Layer: 0
   m_Name: Camera
   m_TagString: MainCamera
@@ -950,6 +951,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &736015649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 736015642}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1e614e24c62c4947aa7a727516ee37e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Warspite.Player.CameraOcclusion
+  player: {fileID: 1479757053}
+  playerCamera: {fileID: 736015646}
+  targetAlpha: 0.3
+  fadeSpeed: 10
+  occlusionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  showDebugRay: 1
+  debugRayColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!1 &989672808
 GameObject:
   m_ObjectHideFlags: 0
@@ -1111,7 +1133,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 50.4, y: 2.81, z: 9.1}
-  m_LocalScale: {x: 1, y: 7.0894, z: 58.240356}
+  m_LocalScale: {x: 0.1, y: 7.0894, z: 58.240356}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1648,7 +1670,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 27.7, y: 2.81, z: 31.2}
-  m_LocalScale: {x: 1, y: 7.0894, z: 56.470253}
+  m_LocalScale: {x: 0.01, y: 7.0894, z: 56.470253}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -2085,15 +2107,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Warspite.Player.AudioPulse
   locomotion: {fileID: 1479757055}
+  basePulseCost: 100
   maxCharge: 100
-  chargePerMeterMoved: 2
-  minSpeedForCharge: 1
-  passiveChargeRate: 5
+  chargePerMeterMoved: 0.5
+  minSpeedForCharge: 5.5
+  passiveChargeRate: 0
   enablePassiveCharge: 0
+  enableCostReset: 0
+  resetCostDelay: 50
   pulseRange: 10
   pulseDamage: 100
   pulseKnockback: 50
-  pulseCooldown: 1
+  pulseCooldown: 10
   pulseKey: 325
   showDebugGizmos: 1
   showConeIndicator: 1
@@ -2120,10 +2145,11 @@ MonoBehaviour:
   wakeRadius: 2
   segmentSpacing: 0.5
   segmentLifetime: 2
-  bleedoverDuration: 1.5
+  shockwaveSpawnDelay: 3
   shockwaveDamage: 75
   shockwaveSpeed: 15
   shockwaveRadius: 3
+  shockwaveExtension: 5
   showDebugGizmos: 1
   spawnShockwaveEffect: 1
   wakeColor: {r: 1, g: 0.5, b: 0, a: 0.5}
@@ -2724,7 +2750,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 27.7, y: 2.81, z: -9.4}
-  m_LocalScale: {x: 1, y: 7.0894, z: 60.460403}
+  m_LocalScale: {x: 0.1, y: 7.0894, z: 60.460403}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}

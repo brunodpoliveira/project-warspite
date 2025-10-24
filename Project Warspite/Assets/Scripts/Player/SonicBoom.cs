@@ -26,12 +26,13 @@ namespace Warspite.Player
         [SerializeField] private float wakeRadius = 2f; // Radius of wake damage sphere
         [SerializeField] private float segmentSpacing = 0.5f; // Distance between wake segments
         [SerializeField] private float segmentLifetime = 2f; // How long each segment persists
-        [SerializeField] private float bleedoverDuration = 1.5f; // Time wake persists after dropping below speed threshold
 
         [Header("Shockwave Settings")]
+        [SerializeField] private float shockwaveSpawnDelay = 3f; // Time at high speed before shockwave spawns
         [SerializeField] private float shockwaveDamage = 75f; // Damage dealt by shockwave on contact
         [SerializeField] private float shockwaveSpeed = 15f; // Speed shockwave travels through tunnel (m/s)
         [SerializeField] private float shockwaveRadius = 3f; // Radius of shockwave damage sphere
+        [SerializeField] private float shockwaveExtension = 5f; // Distance shockwave travels beyond tunnel end
 
         [Header("Visual Feedback")]
         [SerializeField] private bool showDebugGizmos = true;
@@ -54,6 +55,7 @@ namespace Warspite.Player
         {
             public int currentSegmentIndex; // Which segment the wave is at
             public float progress; // 0-1 progress between current and next segment
+            public float extensionDistance; // Distance traveled beyond tunnel end
             public GameObject visualObject;
             public System.Collections.Generic.HashSet<GameObject> damagedTargets; // Track what's been hit
         }
@@ -63,9 +65,9 @@ namespace Warspite.Player
         private Shockwave activeShockwave = null;
         private Vector3 lastSegmentPosition;
         private float distanceSinceLastSegment;
-        private float speedDroppedBelowThresholdTime;
         private float boomActivationTime;
-        private bool isInBleedover = false;
+        private float timeAtHighSpeed = 0f; // Tracks how long player has been at high speed
+        private bool shockwaveSpawned = false; // Tracks if shockwave has been spawned for current boom
         
         private const float PLAYER_GRACE_PERIOD = 0.5f; // Player immune to own wake for this duration after activation
 
@@ -101,6 +103,9 @@ namespace Warspite.Player
                 {
                     hasBoomActive = true;
                     boomActivationTime = Time.time;
+                    timeAtHighSpeed = 0f;
+                    shockwaveSpawned = false;
+                    
                     // Start segment position behind player to avoid immediate self-damage
                     Vector3 velocity = locomotion.Velocity;
                     Vector3 direction = velocity.magnitude > 0.1f ? velocity.normalized : transform.forward;
@@ -111,30 +116,23 @@ namespace Warspite.Player
                 // Create trail segments as player moves
                 CreateTrailSegments(false);
                 
-                // Reset bleedover tracking
-                isInBleedover = false;
-            }
-            else if (hasBoomActive)
-            {
-                // Check if we should enter bleedover period
-                if (!isInBleedover)
-                {
-                    // Just dropped below speed threshold - spawn shockwave!
-                    isInBleedover = true;
-                    speedDroppedBelowThresholdTime = Time.time;
-                    SpawnShockwave();
-                }
+                // Track time at high speed
+                timeAtHighSpeed += Time.unscaledDeltaTime;
                 
-                // Check if bleedover period has expired
-                if (isInBleedover)
+                // Spawn shockwave after delay (only once per boom cycle)
+                if (!shockwaveSpawned && timeAtHighSpeed >= shockwaveSpawnDelay)
                 {
-                    float bleedoverElapsed = Time.time - speedDroppedBelowThresholdTime;
-                    if (bleedoverElapsed >= bleedoverDuration)
-                    {
-                        // Bleedover ended, deactivate boom
-                        hasBoomActive = false;
-                        isInBleedover = false;
-                    }
+                    SpawnShockwave();
+                    shockwaveSpawned = true;
+                }
+            }
+            else
+            {
+                // Below speed threshold - deactivate boom
+                if (hasBoomActive)
+                {
+                    hasBoomActive = false;
+                    timeAtHighSpeed = 0f;
                 }
             }
 
@@ -266,8 +264,8 @@ namespace Warspite.Player
             float fadeProgress = age / segmentLifetime;
             float alpha = (1f - fadeProgress) * 0.5f; // Max 0.5 transparency
 
-            // Determine color: red if in bleedover period, orange otherwise
-            Color color = isInBleedover ? dangerColor : wakeColor;
+            // Determine color: red if shockwave spawned, orange otherwise
+            Color color = shockwaveSpawned ? dangerColor : wakeColor;
             color.a = alpha;
             renderer.material.color = color;
 
@@ -284,10 +282,17 @@ namespace Warspite.Player
                 return;
             }
 
+            // Clean up existing shockwave if one is still active (prevents orphaned visuals)
+            if (activeShockwave != null && activeShockwave.visualObject != null)
+            {
+                Destroy(activeShockwave.visualObject);
+            }
+
             activeShockwave = new Shockwave
             {
                 currentSegmentIndex = 0,
                 progress = 0f,
+                extensionDistance = 0f,
                 damagedTargets = new System.Collections.Generic.HashSet<GameObject>(),
                 visualObject = CreateShockwaveVisual()
             };
@@ -324,18 +329,20 @@ namespace Warspite.Player
                 }
             }
 
-            // Check if shockwave reached the end
+            // Check if shockwave reached the end of tunnel
             if (activeShockwave.currentSegmentIndex >= wakeSegments.Count - 1)
             {
                 activeShockwave.progress = 1f;
                 
-                // Destroy shockwave after a brief moment at the end
-                if (activeShockwave.visualObject != null)
+                // Continue traveling beyond tunnel for extension distance
+                activeShockwave.extensionDistance += distanceToMove;
+                
+                // Check if extension is complete
+                if (activeShockwave.extensionDistance >= shockwaveExtension)
                 {
-                    Destroy(activeShockwave.visualObject);
+                    DestroyShockwave();
+                    return;
                 }
-                activeShockwave = null;
-                return;
             }
 
             // Update shockwave position and check for damage
@@ -345,8 +352,37 @@ namespace Warspite.Player
                 activeShockwave.visualObject.transform.position = shockwavePosition;
             }
 
-            // Check for targets to damage
-            CheckShockwaveDamage(shockwavePosition);
+            // Check for targets to damage and obstacles
+            bool hitObstacle = CheckShockwaveDamage(shockwavePosition);
+            
+            // Stop shockwave if it hit a wall or enemy
+            if (hitObstacle)
+            {
+                DestroyShockwave();
+            }
+        }
+
+        private void DestroyShockwave()
+        {
+            if (activeShockwave == null) return;
+
+            // Destroy shockwave visual
+            if (activeShockwave.visualObject != null)
+            {
+                Destroy(activeShockwave.visualObject);
+            }
+            
+            // Clean up all wake segments that the shockwave traversed
+            for (int i = wakeSegments.Count - 1; i >= 0; i--)
+            {
+                if (wakeSegments[i].visualObject != null)
+                {
+                    Destroy(wakeSegments[i].visualObject);
+                }
+            }
+            wakeSegments.Clear();
+            
+            activeShockwave = null;
         }
 
         private Vector3 GetShockwavePosition()
@@ -354,7 +390,23 @@ namespace Warspite.Player
             if (activeShockwave == null || wakeSegments.Count == 0) return Vector3.zero;
 
             int index = activeShockwave.currentSegmentIndex;
-            if (index >= wakeSegments.Count - 1) return wakeSegments[wakeSegments.Count - 1].position;
+            
+            // If at end of tunnel, extend beyond
+            if (index >= wakeSegments.Count - 1)
+            {
+                WakeSegment lastSeg = wakeSegments[wakeSegments.Count - 1];
+                
+                // Calculate direction from second-to-last to last segment
+                Vector3 direction = Vector3.forward; // Default
+                if (wakeSegments.Count >= 2)
+                {
+                    WakeSegment secondLast = wakeSegments[wakeSegments.Count - 2];
+                    direction = (lastSeg.position - secondLast.position).normalized;
+                }
+                
+                // Extend beyond tunnel end
+                return lastSeg.position + direction * activeShockwave.extensionDistance;
+            }
 
             Vector3 currentPos = wakeSegments[index].position;
             Vector3 nextPos = wakeSegments[index + 1].position;
@@ -362,10 +414,11 @@ namespace Warspite.Player
             return Vector3.Lerp(currentPos, nextPos, activeShockwave.progress);
         }
 
-        private void CheckShockwaveDamage(Vector3 position)
+        private bool CheckShockwaveDamage(Vector3 position)
         {
             // Find all objects within shockwave radius
             Collider[] nearbyColliders = Physics.OverlapSphere(position, shockwaveRadius);
+            bool shouldStop = false;
 
             foreach (Collider col in nearbyColliders)
             {
@@ -377,8 +430,21 @@ namespace Warspite.Player
                 // Skip if this is a wake segment visual
                 if (target.name.Contains("WakeSegment") || target.name.Contains("Shockwave")) continue;
 
+                // Check for walls/obstacles (anything with collider but no Health)
                 Health targetHealth = col.GetComponent<Health>();
-                if (targetHealth != null && !targetHealth.IsDead)
+                if (targetHealth == null)
+                {
+                    // Hit a wall or obstacle - stop shockwave
+                    if (spawnShockwaveEffect)
+                    {
+                        ShockwaveEffect.SpawnShockwave(position, Color.white, shockwaveRadius);
+                    }
+                    shouldStop = true;
+                    continue;
+                }
+
+                // Check for damageable targets
+                if (!targetHealth.IsDead)
                 {
                     // Check if this is the player
                     bool isPlayer = target == gameObject;
@@ -399,8 +465,16 @@ namespace Warspite.Player
                         Color effectColor = isPlayer ? dangerColor : shockwaveColor;
                         ShockwaveEffect.SpawnShockwave(position, effectColor, shockwaveRadius);
                     }
+
+                    // Enemy absorbed the shockwave - stop it
+                    if (!isPlayer)
+                    {
+                        shouldStop = true;
+                    }
                 }
             }
+
+            return shouldStop;
         }
 
         private GameObject CreateShockwaveVisual()
@@ -458,8 +532,8 @@ namespace Warspite.Player
         {
             if (wakeSegments.Count == 0) return;
 
-            // Determine color based on current state
-            Color lineColor = isInBleedover ? dangerColor : wakeColor;
+            // Determine color based on whether shockwave has spawned
+            Color lineColor = shockwaveSpawned ? dangerColor : wakeColor;
 
             // Draw lines connecting segments to show the trail
             for (int i = 0; i < wakeSegments.Count - 1; i++)
@@ -470,8 +544,8 @@ namespace Warspite.Player
                 Debug.DrawLine(current.position, next.position, lineColor);
             }
 
-            // Draw connection from last segment to player if active and not in bleedover
-            if (hasBoomActive && !isInBleedover && wakeSegments.Count > 0)
+            // Draw connection from last segment to player if active
+            if (hasBoomActive && wakeSegments.Count > 0)
             {
                 WakeSegment lastSegment = wakeSegments[wakeSegments.Count - 1];
                 Debug.DrawLine(lastSegment.position, transform.position, lineColor);
@@ -482,8 +556,8 @@ namespace Warspite.Player
         {
             if (!showDebugGizmos || wakeSegments.Count == 0) return;
 
-            // Determine color based on current state
-            Gizmos.color = isInBleedover ? dangerColor : wakeColor;
+            // Determine color based on whether shockwave has spawned
+            Gizmos.color = shockwaveSpawned ? dangerColor : wakeColor;
 
             // Draw all wake segments in editor
             foreach (WakeSegment segment in wakeSegments)
@@ -497,8 +571,8 @@ namespace Warspite.Player
                 Gizmos.DrawLine(wakeSegments[i].position, wakeSegments[i + 1].position);
             }
 
-            // Draw line from last segment to player if active and not in bleedover
-            if (hasBoomActive && !isInBleedover && wakeSegments.Count > 0)
+            // Draw line from last segment to player if active
+            if (hasBoomActive && wakeSegments.Count > 0)
             {
                 Gizmos.DrawLine(wakeSegments[wakeSegments.Count - 1].position, transform.position);
             }

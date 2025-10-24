@@ -46,8 +46,23 @@ namespace Warspite.Player
             currentPosition = CalculateDesiredPosition();
             transform.position = currentPosition;
 
+            // Set up camera occlusion if not already present
+            SetupCameraOcclusion();
+
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+        }
+
+        private void SetupCameraOcclusion()
+        {
+            // Check if CameraOcclusion component exists
+            CameraOcclusion occlusion = GetComponent<CameraOcclusion>();
+            if (occlusion == null)
+            {
+                // Add the component
+                occlusion = gameObject.AddComponent<CameraOcclusion>();
+                Debug.Log("CameraOcclusion component added automatically to camera.");
+            }
         }
 
         void LateUpdate()
