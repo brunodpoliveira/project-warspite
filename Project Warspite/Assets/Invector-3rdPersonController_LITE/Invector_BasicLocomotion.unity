@@ -2147,7 +2147,7 @@ MonoBehaviour:
   segmentLifetime: 2
   shockwaveSpawnDelay: 2
   shockwaveDamage: 75
-  shockwaveSpeed: 15
+  shockwaveSpeed: 7
   shockwaveRadius: 3
   shockwaveExtension: 5
   showDebugGizmos: 1
