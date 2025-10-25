@@ -2108,7 +2108,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Warspite.Player.AudioPulse
   locomotion: {fileID: 1479757055}
   basePulseCost: 100
-  maxCharge: 100
+  maxCharge: 800
   chargePerMeterMoved: 0.5
   minSpeedForCharge: 5.5
   passiveChargeRate: 0
@@ -2145,11 +2145,11 @@ MonoBehaviour:
   wakeRadius: 2
   segmentSpacing: 0.5
   segmentLifetime: 2
-  shockwaveSpawnDelay: 2
+  shockwaveSpawnDelay: 0.5
   shockwaveDamage: 75
   shockwaveSpeed: 7
   shockwaveRadius: 3
-  shockwaveExtension: 5
+  shockwaveExtension: 3
   showDebugGizmos: 1
   spawnShockwaveEffect: 1
   wakeColor: {r: 1, g: 0.5, b: 0, a: 0.5}

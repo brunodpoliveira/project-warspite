@@ -29,7 +29,7 @@ namespace Warspite.Player
         [SerializeField] private float segmentLifetime = 2f; // How long each segment persists
 
         [Header("Shockwave Settings")]
-        [SerializeField] private float shockwaveSpawnDelay = 0.5f; // Time at high speed before shockwave spawns
+        [SerializeField] private float shockwaveSpawnDelay = 0.2f; // Time at high speed before shockwave spawns
         [SerializeField] private float shockwaveDamage = 75f; // Damage dealt by shockwave on contact
         [SerializeField] private float shockwaveSpeed = 15f; // Speed shockwave travels through tunnel (m/s)
         [SerializeField] private float shockwaveRadius = 3f; // Radius of shockwave damage sphere
@@ -156,6 +156,26 @@ namespace Warspite.Player
                 {
                     hasBoomActive = false;
                     timeAtHighSpeed = 0f;
+                    
+                    // If shockwave never spawned, clean up orphan segments from this tunnel
+                    if (!shockwaveSpawned)
+                    {
+                        int orphanedTunnelId = currentTunnelId;
+                        int removedCount = 0;
+                        for (int i = wakeSegments.Count - 1; i >= 0; i--)
+                        {
+                            if (wakeSegments[i].tunnelId == orphanedTunnelId)
+                            {
+                                if (wakeSegments[i].visualObject != null)
+                                {
+                                    Destroy(wakeSegments[i].visualObject);
+                                }
+                                wakeSegments.RemoveAt(i);
+                                removedCount++;
+                            }
+                        }
+                        Debug.Log($"[SonicBoom] Cleaned up {removedCount} orphan segments from abandoned tunnel {orphanedTunnelId}");
+                    }
                 }
             }
 
@@ -334,11 +354,11 @@ namespace Warspite.Player
 
         private void SpawnShockwave()
         {
-            // Don't spawn if no segments exist for current tunnel
+            // Don't spawn if not enough segments exist for current tunnel
             int currentTunnelSegmentCount = wakeSegments.Count(s => s.tunnelId == currentTunnelId);
-            if (currentTunnelSegmentCount == 0)
+            if (currentTunnelSegmentCount < 2)
             {
-                Debug.Log($"[SonicBoom] Cannot spawn shockwave - no segments for tunnel {currentTunnelId}");
+                Debug.Log($"[SonicBoom] Cannot spawn shockwave - only {currentTunnelSegmentCount} segments for tunnel {currentTunnelId} (need at least 2)");
                 return;
             }
 
