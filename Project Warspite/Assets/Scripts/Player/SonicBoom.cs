@@ -28,7 +28,7 @@ namespace Warspite.Player
         [SerializeField] private float segmentLifetime = 2f; // How long each segment persists
 
         [Header("Shockwave Settings")]
-        [SerializeField] private float shockwaveSpawnDelay = 3f; // Time at high speed before shockwave spawns
+        [SerializeField] private float shockwaveSpawnDelay = 0.5f; // Time at high speed before shockwave spawns
         [SerializeField] private float shockwaveDamage = 75f; // Damage dealt by shockwave on contact
         [SerializeField] private float shockwaveSpeed = 15f; // Speed shockwave travels through tunnel (m/s)
         [SerializeField] private float shockwaveRadius = 3f; // Radius of shockwave damage sphere
@@ -68,8 +68,11 @@ namespace Warspite.Player
         private float boomActivationTime;
         private float timeAtHighSpeed = 0f; // Tracks how long player has been at high speed
         private bool shockwaveSpawned = false; // Tracks if shockwave has been spawned for current boom
+        private float lastShockwaveStopTime = -999f; // Time when last shockwave stopped (for chaining cooldown)
+        private bool isInChainCooldown = false; // Whether we're in cooldown after shockwave stopped
         
-        private const float PLAYER_GRACE_PERIOD = 0.2f; // Player immune to own wake for this duration after activation
+        private const float PLAYER_GRACE_PERIOD = 0.1f; // Player immune to own wake for this duration after activation
+        private const float CHAIN_COOLDOWN = 0.75f; // Cooldown after shockwave stops before new tunnel can start
 
         // Public properties
         public bool HasActiveBoom => hasBoomActive;
@@ -96,15 +99,27 @@ namespace Warspite.Player
             bool meetsConditions = CheckBoomConditions(currentSpeed);
             bool meetsSpeedThreshold = currentSpeed >= minSpeedForBoom;
 
+            // Check if cooldown has expired (use unscaled time so it works during time dilation)
+            if (isInChainCooldown)
+            {
+                float timeRemaining = (lastShockwaveStopTime + CHAIN_COOLDOWN) - Time.unscaledTime;
+                if (timeRemaining <= 0)
+                {
+                    isInChainCooldown = false;
+                    Debug.Log($"[SonicBoom] Chain cooldown expired! Ready for new tunnel. Speed: {currentSpeed:F1}");
+                }
+            }
+
             if (meetsConditions && meetsSpeedThreshold)
             {
-                // Activate boom if not active
-                if (!hasBoomActive)
+                // Activate boom if not active (and not in cooldown)
+                if (!hasBoomActive && !isInChainCooldown)
                 {
                     hasBoomActive = true;
-                    boomActivationTime = Time.time;
+                    boomActivationTime = Time.unscaledTime;
                     timeAtHighSpeed = 0f;
                     shockwaveSpawned = false;
+                    Debug.Log($"[SonicBoom] NEW TUNNEL STARTED! Speed: {currentSpeed:F1}");
                     
                     // Start segment position behind player to avoid immediate self-damage
                     Vector3 velocity = locomotion.Velocity;
@@ -113,17 +128,20 @@ namespace Warspite.Player
                     distanceSinceLastSegment = 0f;
                 }
                 
-                // Create trail segments as player moves
-                CreateTrailSegments(false);
-                
-                // Track time at high speed
-                timeAtHighSpeed += Time.unscaledDeltaTime;
-                
-                // Spawn shockwave after delay (only once per boom cycle)
-                if (!shockwaveSpawned && timeAtHighSpeed >= shockwaveSpawnDelay)
+                // Create trail segments as player moves (only if boom is active)
+                if (hasBoomActive)
                 {
-                    SpawnShockwave();
-                    shockwaveSpawned = true;
+                    CreateTrailSegments(false);
+                    
+                    // Track time at high speed
+                    timeAtHighSpeed += Time.unscaledDeltaTime;
+                    
+                    // Spawn shockwave after delay (only once per boom cycle)
+                    if (!shockwaveSpawned && timeAtHighSpeed >= shockwaveSpawnDelay)
+                    {
+                        SpawnShockwave();
+                        shockwaveSpawned = true;
+                    }
                 }
             }
             else
@@ -402,18 +420,30 @@ namespace Warspite.Player
             }
 
             // Check for targets to damage and obstacles
-            bool hitObstacle = CheckShockwaveDamage(shockwavePosition);
+            bool hitEnemy;
+            bool hitObstacle = CheckShockwaveDamage(shockwavePosition, out hitEnemy);
             
             // Stop shockwave if it hit a wall or enemy
             if (hitObstacle)
             {
-                DestroyShockwave();
+                DestroyShockwave(hitEnemy);
             }
         }
 
-        private void DestroyShockwave()
+        private void DestroyShockwave(bool enemyHit = false)
         {
             if (activeShockwave == null) return;
+
+            // If enemy was hit, trigger cooldown FIRST (before destroying anything)
+            // This immediately stops new segment creation
+            if (enemyHit)
+            {
+                Debug.Log($"[SonicBoom] Enemy hit! Tunnel destroyed, starting {CHAIN_COOLDOWN}s cooldown");
+                hasBoomActive = false;
+                timeAtHighSpeed = 0f;
+                isInChainCooldown = true;
+                lastShockwaveStopTime = Time.unscaledTime;
+            }
 
             // Destroy shockwave visual
             if (activeShockwave.visualObject != null)
@@ -421,7 +451,8 @@ namespace Warspite.Player
                 Destroy(activeShockwave.visualObject);
             }
             
-            // Clean up all wake segments that the shockwave traversed
+            // Clean up all wake segments from this tunnel
+            // (Since we set hasBoomActive=false above, no new segments are being created)
             for (int i = wakeSegments.Count - 1; i >= 0; i--)
             {
                 if (wakeSegments[i].visualObject != null)
@@ -463,7 +494,7 @@ namespace Warspite.Player
             return Vector3.Lerp(currentPos, nextPos, activeShockwave.progress);
         }
 
-        private bool CheckShockwaveDamage(Vector3 position)
+        private bool CheckShockwaveDamage(Vector3 position, out bool hitEnemy)
         {
             // Use 75% of visual radius for detection (balance between precision and reliability)
             float collisionRadius = shockwaveRadius * 0.75f;
@@ -471,6 +502,7 @@ namespace Warspite.Player
             // Find all objects within shockwave radius (ignore triggers)
             Collider[] nearbyColliders = Physics.OverlapSphere(position, collisionRadius, ~0, QueryTriggerInteraction.Ignore);
             bool shouldStop = false;
+            hitEnemy = false;
 
             foreach (Collider col in nearbyColliders)
             {
@@ -545,7 +577,7 @@ namespace Warspite.Player
                     bool isPlayer = target == gameObject || target.transform.IsChildOf(transform);
                     
                     // Skip player damage during grace period (only at boom start)
-                    if (isPlayer && Time.time - boomActivationTime < PLAYER_GRACE_PERIOD)
+                    if (isPlayer && Time.unscaledTime - boomActivationTime < PLAYER_GRACE_PERIOD)
                     {
                         continue;
                     }
@@ -565,6 +597,7 @@ namespace Warspite.Player
                     if (!isPlayer)
                     {
                         shouldStop = true;
+                        hitEnemy = true;
                     }
                 }
             }
