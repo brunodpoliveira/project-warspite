@@ -110,7 +110,6 @@ namespace Warspite.Player
                 if (timeRemaining <= 0)
                 {
                     isInChainCooldown = false;
-                    Debug.Log($"[SonicBoom] Chain cooldown expired! Ready for new tunnel. Speed: {currentSpeed:F1}");
                 }
             }
 
@@ -124,7 +123,6 @@ namespace Warspite.Player
                     timeAtHighSpeed = 0f;
                     shockwaveSpawned = false;
                     currentTunnelId++; // New tunnel gets new ID
-                    Debug.Log($"[SonicBoom] NEW TUNNEL STARTED! TunnelID: {currentTunnelId}, Speed: {currentSpeed:F1}");
                     
                     // Start segment position behind player to avoid immediate self-damage
                     Vector3 velocity = locomotion.Velocity;
@@ -161,7 +159,6 @@ namespace Warspite.Player
                     if (!shockwaveSpawned)
                     {
                         int orphanedTunnelId = currentTunnelId;
-                        int removedCount = 0;
                         for (int i = wakeSegments.Count - 1; i >= 0; i--)
                         {
                             if (wakeSegments[i].tunnelId == orphanedTunnelId)
@@ -171,10 +168,8 @@ namespace Warspite.Player
                                     Destroy(wakeSegments[i].visualObject);
                                 }
                                 wakeSegments.RemoveAt(i);
-                                removedCount++;
                             }
                         }
-                        Debug.Log($"[SonicBoom] Cleaned up {removedCount} orphan segments from abandoned tunnel {orphanedTunnelId}");
                     }
                 }
             }
@@ -358,11 +353,8 @@ namespace Warspite.Player
             int currentTunnelSegmentCount = wakeSegments.Count(s => s.tunnelId == currentTunnelId);
             if (currentTunnelSegmentCount < 2)
             {
-                Debug.Log($"[SonicBoom] Cannot spawn shockwave - only {currentTunnelSegmentCount} segments for tunnel {currentTunnelId} (need at least 2)");
                 return;
             }
-
-            Debug.Log($"[SonicBoom] Spawning shockwave for tunnel {currentTunnelId} with {currentTunnelSegmentCount} segments");
 
             // Clean up existing shockwave if one is still active (prevents orphaned visuals)
             if (activeShockwave != null && activeShockwave.visualObject != null)
@@ -473,7 +465,6 @@ namespace Warspite.Player
             // This immediately stops new segment creation
             if (enemyHit)
             {
-                Debug.Log($"[SonicBoom] Enemy hit! Tunnel destroyed, starting {CHAIN_COOLDOWN}s cooldown");
                 hasBoomActive = false;
                 timeAtHighSpeed = 0f;
                 isInChainCooldown = true;
@@ -501,7 +492,6 @@ namespace Warspite.Player
                 }
             }
             
-            Debug.Log($"[SonicBoom] Destroyed tunnel {shockwaveTunnelId}. Remaining segments: {wakeSegments.Count}");
             activeShockwave = null;
         }
 
