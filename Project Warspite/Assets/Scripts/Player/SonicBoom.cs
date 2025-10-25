@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Linq;
 using Warspite.Core;
 using Warspite.Systems;
 
@@ -48,6 +49,7 @@ namespace Warspite.Player
             public float creationTime;
             public GameObject visualObject;
             public bool isBleedover; // Created during bleedover period
+            public int tunnelId; // Which tunnel this segment belongs to
         }
 
         // Shockwave class to track the traveling damage wave
@@ -58,6 +60,7 @@ namespace Warspite.Player
             public float extensionDistance; // Distance traveled beyond tunnel end
             public GameObject visualObject;
             public System.Collections.Generic.HashSet<GameObject> damagedTargets; // Track what's been hit
+            public int tunnelId; // Which tunnel this shockwave belongs to
         }
 
         private bool hasBoomActive = false;
@@ -70,6 +73,7 @@ namespace Warspite.Player
         private bool shockwaveSpawned = false; // Tracks if shockwave has been spawned for current boom
         private float lastShockwaveStopTime = -999f; // Time when last shockwave stopped (for chaining cooldown)
         private bool isInChainCooldown = false; // Whether we're in cooldown after shockwave stopped
+        private int currentTunnelId = 0; // Increments each time a new tunnel starts
         
         private const float PLAYER_GRACE_PERIOD = 0.1f; // Player immune to own wake for this duration after activation
         private const float CHAIN_COOLDOWN = 0.75f; // Cooldown after shockwave stops before new tunnel can start
@@ -119,7 +123,8 @@ namespace Warspite.Player
                     boomActivationTime = Time.unscaledTime;
                     timeAtHighSpeed = 0f;
                     shockwaveSpawned = false;
-                    Debug.Log($"[SonicBoom] NEW TUNNEL STARTED! Speed: {currentSpeed:F1}");
+                    currentTunnelId++; // New tunnel gets new ID
+                    Debug.Log($"[SonicBoom] NEW TUNNEL STARTED! TunnelID: {currentTunnelId}, Speed: {currentSpeed:F1}");
                     
                     // Start segment position behind player to avoid immediate self-damage
                     Vector3 velocity = locomotion.Velocity;
@@ -205,7 +210,8 @@ namespace Warspite.Player
                     position = lastSegmentPosition,
                     creationTime = Time.time,
                     isBleedover = false, // All segments created during active movement
-                    visualObject = CreateSegmentVisual(lastSegmentPosition)
+                    visualObject = CreateSegmentVisual(lastSegmentPosition),
+                    tunnelId = currentTunnelId // Assign to current tunnel
                 };
 
                 wakeSegments.Add(segment);
@@ -328,11 +334,15 @@ namespace Warspite.Player
 
         private void SpawnShockwave()
         {
-            // Don't spawn if no segments exist
-            if (wakeSegments.Count == 0)
+            // Don't spawn if no segments exist for current tunnel
+            int currentTunnelSegmentCount = wakeSegments.Count(s => s.tunnelId == currentTunnelId);
+            if (currentTunnelSegmentCount == 0)
             {
+                Debug.Log($"[SonicBoom] Cannot spawn shockwave - no segments for tunnel {currentTunnelId}");
                 return;
             }
+
+            Debug.Log($"[SonicBoom] Spawning shockwave for tunnel {currentTunnelId} with {currentTunnelSegmentCount} segments");
 
             // Clean up existing shockwave if one is still active (prevents orphaned visuals)
             if (activeShockwave != null && activeShockwave.visualObject != null)
@@ -348,13 +358,14 @@ namespace Warspite.Player
                 progress = 0f,
                 extensionDistance = 0f,
                 damagedTargets = new System.Collections.Generic.HashSet<GameObject>(),
-                visualObject = shockwaveVisual
+                visualObject = shockwaveVisual,
+                tunnelId = currentTunnelId // Shockwave belongs to current tunnel
             };
             
-            // Change wake segment colors to danger (red)
+            // Change wake segment colors to danger (red) - only for this tunnel's segments
             foreach (WakeSegment segment in wakeSegments)
             {
-                if (segment.visualObject != null)
+                if (segment.tunnelId == currentTunnelId && segment.visualObject != null)
                 {
                     Renderer renderer = segment.visualObject.GetComponent<Renderer>();
                     if (renderer != null && renderer.material != null)
@@ -367,16 +378,20 @@ namespace Warspite.Player
 
         private void UpdateShockwave()
         {
-            if (activeShockwave == null || wakeSegments.Count == 0) return;
+            if (activeShockwave == null) return;
+
+            // Get segments for this shockwave's tunnel only
+            var tunnelSegments = wakeSegments.Where(s => s.tunnelId == activeShockwave.tunnelId).ToList();
+            if (tunnelSegments.Count == 0) return;
 
             // Calculate how far to move this frame (use unscaled time for consistent player ability)
             float distanceToMove = shockwaveSpeed * Time.unscaledDeltaTime;
             
-            // Move through segments
-            while (distanceToMove > 0 && activeShockwave.currentSegmentIndex < wakeSegments.Count - 1)
+            // Move through segments (only from this tunnel)
+            while (distanceToMove > 0 && activeShockwave.currentSegmentIndex < tunnelSegments.Count - 1)
             {
-                WakeSegment currentSeg = wakeSegments[activeShockwave.currentSegmentIndex];
-                WakeSegment nextSeg = wakeSegments[activeShockwave.currentSegmentIndex + 1];
+                WakeSegment currentSeg = tunnelSegments[activeShockwave.currentSegmentIndex];
+                WakeSegment nextSeg = tunnelSegments[activeShockwave.currentSegmentIndex + 1];
                 
                 float segmentDistance = Vector3.Distance(currentSeg.position, nextSeg.position);
                 float remainingInSegment = segmentDistance * (1f - activeShockwave.progress);
@@ -397,7 +412,7 @@ namespace Warspite.Player
             }
 
             // Check if shockwave reached the end of tunnel
-            if (activeShockwave.currentSegmentIndex >= wakeSegments.Count - 1)
+            if (activeShockwave.currentSegmentIndex >= tunnelSegments.Count - 1)
             {
                 activeShockwave.progress = 1f;
                 
@@ -451,36 +466,45 @@ namespace Warspite.Player
                 Destroy(activeShockwave.visualObject);
             }
             
-            // Clean up all wake segments from this tunnel
-            // (Since we set hasBoomActive=false above, no new segments are being created)
+            // Clean up ONLY wake segments from this shockwave's tunnel
+            // This preserves segments from new tunnels created during cooldown
+            int shockwaveTunnelId = activeShockwave.tunnelId;
             for (int i = wakeSegments.Count - 1; i >= 0; i--)
             {
-                if (wakeSegments[i].visualObject != null)
+                if (wakeSegments[i].tunnelId == shockwaveTunnelId)
                 {
-                    Destroy(wakeSegments[i].visualObject);
+                    if (wakeSegments[i].visualObject != null)
+                    {
+                        Destroy(wakeSegments[i].visualObject);
+                    }
+                    wakeSegments.RemoveAt(i);
                 }
             }
-            wakeSegments.Clear();
             
+            Debug.Log($"[SonicBoom] Destroyed tunnel {shockwaveTunnelId}. Remaining segments: {wakeSegments.Count}");
             activeShockwave = null;
         }
 
         private Vector3 GetShockwavePosition()
         {
-            if (activeShockwave == null || wakeSegments.Count == 0) return Vector3.zero;
+            if (activeShockwave == null) return Vector3.zero;
+
+            // Get segments for this shockwave's tunnel only
+            var tunnelSegments = wakeSegments.Where(s => s.tunnelId == activeShockwave.tunnelId).ToList();
+            if (tunnelSegments.Count == 0) return Vector3.zero;
 
             int index = activeShockwave.currentSegmentIndex;
             
             // If at end of tunnel, extend beyond
-            if (index >= wakeSegments.Count - 1)
+            if (index >= tunnelSegments.Count - 1)
             {
-                WakeSegment lastSeg = wakeSegments[wakeSegments.Count - 1];
+                WakeSegment lastSeg = tunnelSegments[tunnelSegments.Count - 1];
                 
                 // Calculate direction from second-to-last to last segment
                 Vector3 direction = Vector3.forward; // Default
-                if (wakeSegments.Count >= 2)
+                if (tunnelSegments.Count >= 2)
                 {
-                    WakeSegment secondLast = wakeSegments[wakeSegments.Count - 2];
+                    WakeSegment secondLast = tunnelSegments[tunnelSegments.Count - 2];
                     direction = (lastSeg.position - secondLast.position).normalized;
                 }
                 
@@ -488,8 +512,8 @@ namespace Warspite.Player
                 return lastSeg.position + direction * activeShockwave.extensionDistance;
             }
 
-            Vector3 currentPos = wakeSegments[index].position;
-            Vector3 nextPos = wakeSegments[index + 1].position;
+            Vector3 currentPos = tunnelSegments[index].position;
+            Vector3 nextPos = tunnelSegments[index + 1].position;
             
             return Vector3.Lerp(currentPos, nextPos, activeShockwave.progress);
         }
