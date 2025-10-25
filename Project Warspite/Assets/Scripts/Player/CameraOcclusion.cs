@@ -62,25 +62,21 @@ namespace Warspite.Player
                 }
                 else
                 {
-                    Debug.LogWarning("CameraOcclusion: No player assigned and couldn't find GameObject with 'Player' tag!");
+                    // No player found
                 }
             }
 
             if (playerCamera == null)
             {
-                Debug.LogError("CameraOcclusion: No camera found!");
                 enabled = false;
                 return;
             }
 
             if (player == null)
             {
-                Debug.LogError("CameraOcclusion: No player target found!");
                 enabled = false;
                 return;
             }
-
-            Debug.Log($"CameraOcclusion initialized: Camera={playerCamera.name}, Player={player.name}");
         }
 
         void LateUpdate()
@@ -321,8 +317,6 @@ namespace Warspite.Player
                         matData.material.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
                         matData.material.renderQueue = matData.renderQueue;
                     }
-
-                    Debug.Log($"Fully restored {renderer.name}: {matData.material.name}");
                 }
                 else
                 {

@@ -71,7 +71,7 @@ namespace Warspite.Systems
             if (audioPulse != null)
             {
                 string pulseStatus = audioPulse.IsFullyCharged ? "READY!" : "Charging...";
-                string pulseText = $"Audio Pulse: {audioPulse.CurrentCharge:F0}/{audioPulse.MaxCharge:F0} ({pulseStatus})";
+                string pulseText = $"Audio Pulse: {audioPulse.CurrentCharge:F0}/{audioPulse.CurrentPulseCost:F0} ({pulseStatus})";
                 
                 // Change color based on charge status
                 Color originalColor = style.normal.textColor;

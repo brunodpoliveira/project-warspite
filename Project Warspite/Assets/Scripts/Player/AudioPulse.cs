@@ -54,6 +54,17 @@ namespace Warspite.Player
         public bool IsFullyCharged => currentCharge >= CurrentPulseCost;
         public bool CanUsePulse => IsFullyCharged && Time.time >= lastPulseTime + pulseCooldown;
 
+        void OnValidate()
+        {
+            // Ensure maxCharge can accommodate at least 4 exponential pulses
+            // (100, 200, 400, 800 = need at least 800)
+            float minRequired = basePulseCost * Mathf.Pow(2, 3);
+            if (maxCharge < minRequired)
+            {
+                maxCharge = minRequired;
+            }
+        }
+
         void Start()
         {
             // Auto-find locomotion if not assigned

@@ -106,8 +106,6 @@ namespace Warspite.Player
                     timeAtHighSpeed = 0f;
                     shockwaveSpawned = false;
                     
-                    Debug.Log($"SonicBoom: Activated! Speed: {currentSpeed:F2}, RequireL3: {requireDeepestSlow}, IsL3: {(timeController != null ? timeController.IsDeepestSlow().ToString() : "N/A")}");
-                    
                     // Start segment position behind player to avoid immediate self-damage
                     Vector3 velocity = locomotion.Velocity;
                     Vector3 direction = velocity.magnitude > 0.1f ? velocity.normalized : transform.forward;
@@ -124,7 +122,6 @@ namespace Warspite.Player
                 // Spawn shockwave after delay (only once per boom cycle)
                 if (!shockwaveSpawned && timeAtHighSpeed >= shockwaveSpawnDelay)
                 {
-                    Debug.Log($"SonicBoom: Spawning shockwave! Time at high speed: {timeAtHighSpeed:F2}s, Segments: {wakeSegments.Count}");
                     SpawnShockwave();
                     shockwaveSpawned = true;
                 }
@@ -316,7 +313,6 @@ namespace Warspite.Player
             // Don't spawn if no segments exist
             if (wakeSegments.Count == 0)
             {
-                Debug.LogWarning("SonicBoom: Cannot spawn shockwave - no wake segments!");
                 return;
             }
 
@@ -327,7 +323,6 @@ namespace Warspite.Player
             }
 
             GameObject shockwaveVisual = CreateShockwaveVisual();
-            Debug.Log($"SonicBoom: Shockwave created! Visual: {(shockwaveVisual != null ? shockwaveVisual.name : "NULL")}");
 
             activeShockwave = new Shockwave
             {
@@ -513,12 +508,6 @@ namespace Warspite.Player
                     targetHealth = col.GetComponentInParent<Health>();
                 }
                 
-                // Log only for player
-                if (isPlayerRelated)
-                {
-                    Debug.Log($"SonicBoom: Found PLAYER collider: {target.name}, Health: {(targetHealth != null ? "YES (on " + (col.GetComponent<Health>() != null ? "self" : "parent") + ")" : "NO")}");
-                }
-                
                 if (targetHealth == null)
                 {
                     // Ignore floor (anything below the shockwave)
@@ -543,7 +532,6 @@ namespace Warspite.Player
                             {
                                 ShockwaveEffect.SpawnShockwave(position, Color.white, shockwaveRadius);
                             }
-                            Debug.Log($"SonicBoom: Shockwave hit wall: {target.name}");
                             shouldStop = true;
                         }
                     }
@@ -559,14 +547,12 @@ namespace Warspite.Player
                     // Skip player damage during grace period (only at boom start)
                     if (isPlayer && Time.time - boomActivationTime < PLAYER_GRACE_PERIOD)
                     {
-                        Debug.Log($"SonicBoom: Skipping player damage (grace period: {Time.time - boomActivationTime:F2}s)");
                         continue;
                     }
 
                     // Deal damage once
                     targetHealth.TakeDamage(shockwaveDamage);
                     activeShockwave.damagedTargets.Add(target);
-                    Debug.Log($"SonicBoom: Shockwave hit {(isPlayer ? "PLAYER" : "enemy")}: {target.name}, damage: {shockwaveDamage}, health remaining: {targetHealth.CurrentHealth}");
 
                     // Spawn visual effect
                     if (spawnShockwaveEffect)
@@ -578,7 +564,6 @@ namespace Warspite.Player
                     // Enemy absorbed the shockwave - stop it
                     if (!isPlayer)
                     {
-                        Debug.Log($"SonicBoom: Enemy absorbed shockwave, stopping");
                         shouldStop = true;
                     }
                 }
