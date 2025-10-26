@@ -334,11 +334,128 @@ Three interconnected resources form the "push-forward triangle":
 5. **Evaluate AI tick logic** under scaled time
 6. **Performance benchmark:** Target ≥60 fps with debris active
 
+### Implementation Plan (Priority Order)
+
+#### **Phase 1: Enemy System Foundation**
+Implement the 6 prototype enemy archetypes:
+
+1. **Pistol Infantry**
+   - Semi-automatic pistol (15 rounds)
+   - 15-20 damage per hit, ~2 rounds/sec
+   - Basic patrol, cover-taking, medium accuracy
+   - Role: Cannon fodder, teaches basic mechanics
+
+2. **Shotgun Rusher**
+   - Pump-action shotgun (7 rounds)
+   - 60-80 damage close range, ~1 round/sec
+   - Aggressive advance, closes distance
+   - Role: Forces movement, punishes camping
+
+3. **Grenadier**
+   - Timed grenades with blast + shrapnel (80/40 damage)
+   - Telegraph: blast radius circle, timer display, shrapnel pattern
+   - Player can throw grenades back at any time dilation level
+   - Role: Area denial, forces repositioning
+
+4. **Assault Rifle Soldier**
+   - 3-round burst rifle (30 rounds, 10 bursts)
+   - 25-30 damage per hit, ~2 bursts/sec
+   - Tactical positioning, suppressive fire
+   - Role: Mid-range threat, tests gap-closing ability
+
+5. **Machine Gunner**
+   - Belt-fed machine gun (150 rounds)
+   - 35-40 damage per hit, ~10 rounds/sec sustained
+   - Suppressive fire, area control, slow when firing
+   - Role: High-priority target, creates danger zones
+
+6. **Sniper**
+   - Single-shot rifle with laser telegraph
+   - 100+ damage per hit, 1 round (reload after each shot)
+   - Red laser pointer shows aim 1-2 seconds before firing
+   - Role: Area denial, encourages time dilation dodging
+
+#### **Phase 2: Projectile Systems**
+
+1. **Accuracy Cone Mechanics**
+   - Base cone angle per weapon type (pistol: 2°, rifle: 1°, shotgun: 8°)
+   - Distance scaling: `actualSpread = baseSpread + (distance × spreadMultiplier)`
+   - Random distribution within cone
+   - Weapon-specific modifiers (MG recoil accumulation, sniper minimal spread)
+
+2. **Damage Falloff System**
+   - Close range (0-10m): 100% damage
+   - Medium range (10-30m): 80-100% damage (gradual falloff)
+   - Long range (30-50m): 50-80% damage
+   - Extreme range (50m+): 30-50% damage
+   - Weapon-specific curves (shotgun drops faster, sniper maintains better)
+
+3. **Grenade Telegraph System**
+   - Blast radius circle visible on ground
+   - Timer displayed on grenade (like crosshair)
+   - Shrapnel spread pattern visualization
+   - Throwback mechanic at any time dilation level
+
+#### **Phase 3: Demo Arena Construction**
+
+1. **Static Test Environment**
+   - Single enclosed interior space
+   - Strategic cover placement (some destructible, some resistant)
+   - Enemy spawn points for controlled testing
+   - Clear sightlines for sniper positioning
+   - Close-quarters areas for shotgun/melee testing
+
+2. **Arena Features**
+   - Walkable walls (L2/L3 testing)
+   - Climbable columns
+   - Destructible props for sonic boom interaction
+   - Cover variety (resistant vs. scatter)
+
+#### **Phase 4: Quality of Life Systems**
+
+1. **Second Wind Mechanic**
+   - Trigger: Damage that would reduce HP to ≤0
+   - Effect: Set HP to 1 instead of death
+   - Disable health drain during Second Wind state
+   - Visual feedback: Screen effects, UI indicator
+   - Audio feedback: Distinct sound cue
+   - Frequency: Once per game session
+   - Track usage state for UI display
+
+2. **Enemy Feedback Enhancements**
+   - Distinct visual feedback under slow motion
+   - Hit reactions scaled to time dilation
+   - Death animations that work at 0.05× speed
+   - Clear critical state indicators (pink highlight)
+
+#### **Phase 5: Testing & Tuning**
+
+1. **Physics Stability**
+   - Test all enemies across snap transitions (L1 ↔ L2 ↔ L3)
+   - Verify projectile behavior at different time scales
+   - Validate sonic boom interactions with enemies
+   - Check debris field performance
+
+2. **AI Tick Logic**
+   - Ensure AI updates correctly under scaled time
+   - Verify pathfinding at different time scales
+   - Test enemy reactions to player abilities
+   - Validate grenade throwback timing
+
+3. **Performance Benchmark**
+   - Target: ≥60 fps with full debris active
+   - Test with all 6 enemy types spawned
+   - Stress test with multiple sonic booms
+   - Profile and optimize bottlenecks
+
 ### Short-Term Deliverables
 - Stable full-physics destruction at all dilation levels
 - Distinct enemy feedback under slow motion
 - Consistent control feel through dilation snaps
 - Core loop validation: "Enter → Engage → Feed → Exit" within 90 seconds
+- All 6 prototype enemies functional and balanced
+- Projectile cone and damage falloff systems working
+- Second Wind mechanic implemented and tested
 
 ---
 
