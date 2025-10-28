@@ -6,23 +6,37 @@ namespace Warspite.World
     /// <summary>
     /// Simple physics-based projectile.
     /// Auto-destroys after lifetime. Uses Rigidbody so it slows with Time.timeScale.
-    /// Damages entities on impact.
+    /// Damages entities on impact with distance-based falloff.
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     public class Projectile : MonoBehaviour
     {
+        [Header("Basic Settings")]
         [SerializeField] private float lifetime = 10f;
         [SerializeField] private float damage = 10f;
         [SerializeField] private bool destroyOnImpact = true;
         [SerializeField] private bool enableDoomPrediction = true;
         [SerializeField] private float predictionCheckInterval = 0.2f;
         
+        [Header("Damage Falloff")]
+        [SerializeField] private bool useDamageFalloff = true;
+        [SerializeField] private AnimationCurve falloffCurve = AnimationCurve.Linear(0f, 1f, 50f, 0.3f);
+        [Tooltip("Distance ranges: 0-10m = 100%, 10-30m = 80-100%, 30-50m = 50-80%, 50m+ = 30-50%")]
+        [SerializeField] private float maxFalloffDistance = 50f;
+        [SerializeField] private bool debugDamageFalloff = false;
+        
         private Rigidbody rb;
         private float spawnTime;
         private float lastPredictionCheck;
         private GameObject predictedTarget;
+        private Vector3 spawnPosition;
 
         public bool IsCaught { get; set; }
+        
+        // Public setters for EnemyLogic to configure
+        public void SetDamage(float newDamage) => damage = newDamage;
+        public void SetUseDamageFalloff(bool useFalloff) => useDamageFalloff = useFalloff;
+        public void SetFalloffCurve(AnimationCurve curve) => falloffCurve = curve;
 
         void Awake()
         {
@@ -32,6 +46,7 @@ namespace Warspite.World
         void Start()
         {
             spawnTime = Time.time;
+            spawnPosition = transform.position;
         }
 
         void Update()
@@ -112,7 +127,18 @@ namespace Warspite.World
                 
                 if (!isEnemyHittingEnemy)
                 {
-                    health.TakeDamage(damage);
+                    // Calculate damage with falloff
+                    float finalDamage = CalculateDamageWithFalloff();
+                    
+                    // Debug logging
+                    if (debugDamageFalloff)
+                    {
+                        float distance = GetDistanceTraveled();
+                        float multiplier = useDamageFalloff ? falloffCurve.Evaluate(distance) : 1f;
+                        Debug.Log($"[Projectile] Hit {collision.gameObject.name} | Distance: {distance:F1}m | Base: {damage:F1} | Multiplier: {multiplier:F2}x | Final: {finalDamage:F1}");
+                    }
+                    
+                    health.TakeDamage(finalDamage);
                 }
             }
 
@@ -121,6 +147,47 @@ namespace Warspite.World
             {
                 Destroy(gameObject);
             }
+        }
+        
+        /// <summary>
+        /// Calculate damage based on distance traveled with falloff curve.
+        /// </summary>
+        private float CalculateDamageWithFalloff()
+        {
+            if (!useDamageFalloff)
+            {
+                return damage; // No falloff, return base damage
+            }
+            
+            // Calculate distance traveled
+            float distanceTraveled = Vector3.Distance(spawnPosition, transform.position);
+            
+            // Clamp distance to max falloff range
+            float clampedDistance = Mathf.Clamp(distanceTraveled, 0f, maxFalloffDistance);
+            
+            // Evaluate falloff curve (returns multiplier 0-1)
+            float falloffMultiplier = falloffCurve.Evaluate(clampedDistance);
+            
+            // Calculate final damage
+            float finalDamage = damage * falloffMultiplier;
+            
+            return finalDamage;
+        }
+        
+        /// <summary>
+        /// Get current damage at current position (for debugging/UI)
+        /// </summary>
+        public float GetCurrentDamage()
+        {
+            return CalculateDamageWithFalloff();
+        }
+        
+        /// <summary>
+        /// Get distance traveled (for debugging/UI)
+        /// </summary>
+        public float GetDistanceTraveled()
+        {
+            return Vector3.Distance(spawnPosition, transform.position);
         }
     }
 }

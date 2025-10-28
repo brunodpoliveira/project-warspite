@@ -258,10 +258,32 @@ namespace Warspite.World
             spawnPosition += aimDirection.normalized * minSpawnDistance;
             proj.transform.position = spawnPosition;
 
-            // Launch
+            // Configure and launch projectile or grenade
             Projectile projectile = proj.GetComponent<Projectile>();
-            if (projectile != null)
+            Grenade grenade = proj.GetComponent<Grenade>();
+            
+            if (grenade != null)
             {
+                // Configure grenade
+                grenade.SetExplosionStats(
+                    config.grenadeBlastDamage,
+                    config.grenadeShrapnelDamage,
+                    config.grenadeBlastRadius,
+                    config.grenadeTimer
+                );
+                
+                // Launch grenade with arc
+                grenade.Launch(aimDirection.normalized * config.muzzleSpeed);
+            }
+            else if (projectile != null)
+            {
+                // Set damage (with override if set)
+                projectile.SetDamage(GetDamage());
+                
+                // Set falloff settings from config
+                projectile.SetUseDamageFalloff(config.useDamageFalloff);
+                
+                // Launch projectile
                 projectile.Launch(aimDirection.normalized * config.muzzleSpeed);
             }
         }
@@ -283,22 +305,32 @@ namespace Warspite.World
                 return Instantiate(config.projectilePrefab);
             }
 
-            // Auto-create simple cube projectile
-            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.transform.localScale = Vector3.one * config.projectileSize;
-            cube.name = $"Projectile_{config.enemyName}";
+            // Check if this enemy uses grenades
+            bool isGrenadier = config.usesGrenades;
+            
+            // Auto-create projectile or grenade
+            PrimitiveType shape = isGrenadier ? PrimitiveType.Sphere : PrimitiveType.Cube;
+            GameObject obj = GameObject.CreatePrimitive(shape);
+            obj.transform.localScale = Vector3.one * (isGrenadier ? config.projectileSize * 2f : config.projectileSize);
+            obj.name = isGrenadier ? $"Grenade_{config.enemyName}" : $"Projectile_{config.enemyName}";
 
             // Add Rigidbody
-            Rigidbody rb = cube.AddComponent<Rigidbody>();
-            rb.mass = 0.1f;
+            Rigidbody rb = obj.AddComponent<Rigidbody>();
+            rb.mass = isGrenadier ? 0.5f : 0.1f; // Grenades are heavier
             rb.useGravity = true;
 
-            // Add Projectile script
-            Projectile projectile = cube.AddComponent<Projectile>();
-            // TODO: Set damage based on config and distance falloff
+            // Add appropriate script
+            if (isGrenadier)
+            {
+                Grenade grenade = obj.AddComponent<Grenade>();
+            }
+            else
+            {
+                Projectile projectile = obj.AddComponent<Projectile>();
+            }
 
             // Color based on config
-            Renderer renderer = cube.GetComponent<Renderer>();
+            Renderer renderer = obj.GetComponent<Renderer>();
             if (renderer != null)
             {
                 Shader shader = Shader.Find("Universal Render Pipeline/Lit");
@@ -320,7 +352,7 @@ namespace Warspite.World
                 renderer.material = mat;
             }
 
-            return cube;
+            return obj;
         }
 
         private void StartReload()
