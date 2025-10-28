@@ -106,11 +106,11 @@ namespace Warspite.World
             Health health = collision.gameObject.GetComponent<Health>();
             if (health != null)
             {
-                // Don't damage if this projectile was shot by a turret and hits another turret
+                // Don't damage if this projectile was shot by an enemy and hits another enemy
                 // (friendly fire prevention - could be made more sophisticated)
-                bool isTurretHittingTurret = !IsCaught && collision.gameObject.GetComponent<SimpleTurret>() != null;
+                bool isEnemyHittingEnemy = !IsCaught && collision.gameObject.GetComponent<EnemyLogic>() != null;
                 
-                if (!isTurretHittingTurret)
+                if (!isEnemyHittingEnemy)
                 {
                     health.TakeDamage(damage);
                 }

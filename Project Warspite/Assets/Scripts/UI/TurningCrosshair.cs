@@ -5,14 +5,15 @@ using Warspite.World;
 namespace Warspite.UI
 {
     /// <summary>
-    /// Crosshair that rotates to indicate turret firing cadence.
-    /// Spins after turret fires, locks when ready to fire again.
-    /// Provides visual feedback for turret timing.
+    /// Crosshair that rotates to indicate enemy firing cadence.
+    /// Spins after enemy fires, locks when ready to fire again.
+    /// Provides visual feedback for enemy timing.
+    /// Works with both SimpleTurret (legacy) and EnemyLogic (new system).
     /// </summary>
     public class TurningCrosshair : MonoBehaviour
     {
         [Header("References")]
-        [SerializeField] private SimpleTurret turret;
+        [SerializeField] private EnemyLogic enemy;
         [SerializeField] private RectTransform crosshairTransform;
         [SerializeField] private RectTransform reloadIndicatorTransform;
 
@@ -24,8 +25,9 @@ namespace Warspite.UI
         [SerializeField] private float crosshairSize = 50f;
 
         [Header("Position")]
-        [SerializeField] private Vector3 offset = new Vector3(0, 0.5f, 0); // At gun level, not above head
+        [SerializeField] private Vector3 offset = new Vector3(0, 2f, 0); // Above enemy head
         [SerializeField] private bool worldSpace = true;
+        [SerializeField] private bool debugDraw = false;
 
         private Image crosshairImage;
         private Image reloadIndicatorImage;
@@ -39,10 +41,10 @@ namespace Warspite.UI
         {
             mainCamera = Camera.main;
 
-            // Auto-find turret if not assigned
-            if (turret == null)
+            // Auto-find enemy if not assigned
+            if (enemy == null)
             {
-                turret = GetComponentInParent<SimpleTurret>();
+                enemy = GetComponentInParent<EnemyLogic>();
             }
 
             // Create crosshair UI if not assigned
@@ -70,9 +72,9 @@ namespace Warspite.UI
 
         void Start()
         {
-            if (turret == null)
+            if (enemy == null)
             {
-                Debug.LogWarning("TurningCrosshair: No SimpleTurret assigned!");
+                Debug.LogWarning("TurningCrosshair: No EnemyLogic assigned!");
                 enabled = false;
                 return;
             }
@@ -83,12 +85,12 @@ namespace Warspite.UI
 
         void Update()
         {
-            if (turret == null || crosshairTransform == null) return;
+            if (enemy == null || crosshairTransform == null) return;
 
             UpdatePosition();
             
-            // Check if turret is reloading
-            if (turret.IsReloading)
+            // Check if enemy is reloading
+            if (enemy.IsReloading)
             {
                 UpdateReloadIndicator();
             }
@@ -120,12 +122,17 @@ namespace Warspite.UI
             {
                 canvas.worldCamera = mainCamera;
                 RectTransform canvasRect = canvasObj.GetComponent<RectTransform>();
-                canvasRect.sizeDelta = new Vector2(100f, 100f);
-                canvasRect.localScale = Vector3.one * 0.01f; // Scale down for world space
+                canvasRect.sizeDelta = new Vector2(200f, 200f);
+                canvasRect.localScale = Vector3.one * 0.02f; // Bigger scale for visibility
+                
+                Debug.Log($"TurningCrosshair: Created world-space canvas for {transform.parent?.name ?? "unknown"} at position {canvasObj.transform.position}");
             }
 
             CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
             scaler.dynamicPixelsPerUnit = 100;
+            
+            // Add GraphicRaycaster for UI interaction (optional but good practice)
+            canvasObj.AddComponent<UnityEngine.UI.GraphicRaycaster>();
 
             // Create crosshair image
             GameObject crosshairObj = new GameObject("Crosshair");
@@ -134,7 +141,7 @@ namespace Warspite.UI
             crosshairObj.transform.localScale = Vector3.one;
 
             crosshairTransform = crosshairObj.AddComponent<RectTransform>();
-            crosshairTransform.sizeDelta = new Vector2(crosshairSize, crosshairSize);
+            crosshairTransform.sizeDelta = new Vector2(crosshairSize * 2f, crosshairSize * 2f); // Make it bigger
             crosshairTransform.anchorMin = new Vector2(0.5f, 0.5f);
             crosshairTransform.anchorMax = new Vector2(0.5f, 0.5f);
             crosshairTransform.pivot = new Vector2(0.5f, 0.5f);
@@ -257,8 +264,8 @@ namespace Warspite.UI
         {
             if (!worldSpace) return;
 
-            // Position above turret
-            Vector3 worldPos = turret.transform.position + offset;
+            // Position above enemy
+            Vector3 worldPos = enemy.transform.position + offset;
             canvas.transform.position = worldPos;
 
             // Face camera
@@ -285,14 +292,14 @@ namespace Warspite.UI
 
         private void UpdateColor()
         {
-            if (crosshairImage == null || turret == null) return;
+            if (crosshairImage == null || enemy == null || enemy.Config == null) return;
 
-            // Get turret's actual fire timing
-            float turretLastFireTime = turret.LastFireTime;
-            float fireInterval = turret.Interval;
+            // Get enemy's actual fire timing
+            float enemyLastFireTime = enemy.LastFireTime;
+            float fireInterval = enemy.FireInterval; // Uses overrides if set
 
-            // Calculate time since turret last fired
-            float timeSinceFire = Time.time - turretLastFireTime;
+            // Calculate time since enemy last fired
+            float timeSinceFire = Time.time - enemyLastFireTime;
 
             if (timeSinceFire >= fireInterval)
             {
@@ -311,7 +318,7 @@ namespace Warspite.UI
 
         private void UpdateReloadIndicator()
         {
-            if (reloadIndicatorImage == null || turret == null) return;
+            if (reloadIndicatorImage == null || enemy == null) return;
 
             // Show reload indicator, hide crosshair (only once)
             if (!isReloading)
@@ -321,12 +328,12 @@ namespace Warspite.UI
             }
 
             // Update fill amount based on reload progress
-            float progress = turret.ReloadProgress;
+            float progress = enemy.ReloadProgress;
             reloadIndicatorImage.fillAmount = progress;
         }
 
         /// <summary>
-        /// Call this when turret fires to reset the indicator
+        /// Call this when enemy fires to reset the indicator
         /// </summary>
         public void OnTurretFired()
         {
@@ -335,7 +342,7 @@ namespace Warspite.UI
         }
 
         /// <summary>
-        /// Manual update for last fire time (if turret doesn't call OnTurretFired)
+        /// Manual update for last fire time (if enemy doesn't call OnTurretFired)
         /// </summary>
         public void SetLastFireTime(float time)
         {
@@ -343,7 +350,7 @@ namespace Warspite.UI
         }
 
         /// <summary>
-        /// Called when turret starts reloading
+        /// Called when enemy starts reloading
         /// </summary>
         public void OnReloadStart()
         {
@@ -352,7 +359,7 @@ namespace Warspite.UI
         }
 
         /// <summary>
-        /// Called when turret finishes reloading
+        /// Called when enemy finishes reloading
         /// </summary>
         public void OnReloadComplete()
         {
@@ -387,6 +394,20 @@ namespace Warspite.UI
             {
                 crosshairTransform.gameObject.SetActive(true);
             }
+        }
+
+        void OnDrawGizmos()
+        {
+            if (!debugDraw || enemy == null) return;
+
+            // Draw debug sphere at crosshair position
+            Vector3 worldPos = enemy.transform.position + offset;
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(worldPos, 0.5f);
+            
+            // Draw line from enemy to crosshair position
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(enemy.transform.position, worldPos);
         }
     }
 }

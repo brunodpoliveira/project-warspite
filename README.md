@@ -428,7 +428,93 @@ Implement the 6 prototype enemy archetypes:
    - Death animations that work at 0.05× speed
    - Clear critical state indicators (pink highlight)
 
-#### **Phase 5: Testing & Tuning**
+#### **Phase 5: Enemy Movement AI**
+
+1. **AI Behavior System**
+   - State machine architecture (Idle, Patrol, Combat, Cover, Retreat)
+   - Time-scale aware updates (use `Time.deltaTime` for world-scaled behavior)
+   - Modular behavior components for easy enemy type configuration
+   - Decision-making that respects time dilation
+
+2. **Movement Patterns by Enemy Type**
+   
+   **Pistol Infantry:**
+   - Patrol between waypoints when idle
+   - Move to cover when taking damage
+   - Peek and shoot from cover
+   - Flank player when in groups
+   - Retreat at low health
+   
+   **Shotgun Rusher:**
+   - Aggressive direct pursuit of player
+   - Sprint when outside effective range
+   - Ignore cover, prioritize closing distance
+   - Strafe when in close range
+   - No retreat behavior (all-in aggression)
+   
+   **Grenadier:**
+   - Maintain medium distance from player (10-20m)
+   - Seek elevated positions when available
+   - Retreat if player closes distance
+   - Throw grenades at predicted player position
+   - Take cover during grenade cooldown
+   
+   **Assault Rifle Soldier:**
+   - Tactical positioning, uses cover effectively
+   - Suppressive fire when player is exposed
+   - Advance when player is in cover
+   - Coordinate with other soldiers (group tactics)
+   - Reload behind cover
+   
+   **Machine Gunner:**
+   - Find stationary firing position with good sightlines
+   - Minimal movement once positioned
+   - Slow turn rate when firing (heavy weapon)
+   - Vulnerable during setup/breakdown
+   - Priority target behavior (draws player attention)
+   
+   **Sniper:**
+   - Long-range positioning (30m+)
+   - Stationary or slow repositioning
+   - Laser telegraph before firing (1-2 sec warning)
+   - Relocate after 2-3 shots
+   - Retreat if player closes within 15m
+
+3. **Cover System**
+   - Raycast-based cover detection
+   - Cover evaluation (quality, distance, exposure)
+   - Dynamic cover selection based on player position
+   - Peek-and-shoot behavior from cover
+   - Cover abandonment when flanked or destroyed
+
+4. **Target Acquisition & Tracking**
+   - Line-of-sight checks
+   - Last known position tracking
+   - Prediction for fast-moving player
+   - Target leading for projectile weapons
+   - Loss of target behavior (search, return to patrol)
+
+5. **Group Coordination (Optional - Nice to Have)**
+   - Simple squad awareness (nearby allies)
+   - Flanking coordination (pincer movements)
+   - Suppression + advance tactics
+   - Avoid clustering (spacing maintenance)
+
+6. **Time Dilation Considerations**
+   - AI update rate scales with `Time.timeScale`
+   - Movement speed respects world time scaling
+   - Reaction times feel consistent across time scales
+   - Animations blend properly at 0.05× speed
+   - Pathfinding remains stable during snap transitions
+
+7. **Pathfinding**
+   - NavMesh-based navigation
+   - Dynamic obstacle avoidance
+   - Jump/vault over low obstacles
+   - Fallback to direct movement if pathfinding fails
+   - Performance-friendly update frequency
+
+#### **Phase 6: Testing & Tuning**
 
 1. **Physics Stability**
    - Test all enemies across snap transitions (L1 ↔ L2 ↔ L3)

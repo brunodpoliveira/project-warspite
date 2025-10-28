@@ -1,0 +1,124 @@
+═══════════════════════════════════════════════════════════════
+  ENEMY PREFAB - QUICK SETUP CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+STEP 1: CREATE BASE OBJECT
+---------------------------
+□ Create Capsule/Cylinder in scene
+□ Rename: "Enemy_[Type]"
+□ Position Y = 1 (sits on ground)
+□ Scale appropriately (human-sized)
+
+
+STEP 2: ADD COMPONENTS (in this order)
+---------------------------------------
+□ Add Component → Health (Warspite.Core)
+    └─ Max Health: 100
+
+□ Add Component → EnemyLogic (Warspite.World)
+    └─ Config: [Drag EnemyConfig asset here]
+    └─ Track Target: ✓ Checked
+    └─ Min Spawn Distance: 1.5
+
+
+STEP 3: CREATE MUZZLE POINT
+----------------------------
+□ Right-click enemy → Create Empty
+□ Rename: "MuzzlePoint"
+□ Position: X=0, Y=1.5, Z=0.5 (front of enemy)
+□ Drag into "Muzzle Point" field in EnemyLogic
+
+
+STEP 4: OPTIONAL - ADD PHYSICS
+-------------------------------
+□ Add Component → Rigidbody
+    └─ Mass: 70
+    └─ Use Gravity: ✓
+    └─ Constraints: Freeze Rotation X, Y, Z
+
+
+STEP 5: SAVE AS PREFAB
+-----------------------
+□ Drag enemy from Hierarchy → Project window
+□ Save to: Assets/Prefabs/Enemies/
+□ Name: "Enemy_[Type]"
+
+
+STEP 6: TEST
+------------
+□ Drag prefab into scene
+□ Press Play
+□ Enemy should auto-target and fire at player
+
+
+═══════════════════════════════════════════════════════════════
+  COMPONENT HIERARCHY (What you should see in Inspector)
+═══════════════════════════════════════════════════════════════
+
+Enemy_Pistol (GameObject)
+├─ Transform
+├─ Mesh Filter (Capsule)
+├─ Mesh Renderer
+├─ Capsule Collider
+├─ Rigidbody (optional)
+├─ Health ← Set Max Health
+├─ Enemy Logic (Script) ← Assign Config here!
+│   ├─ Config: PistolInfantry.asset ← DRAG CONFIG HERE
+│   ├─ Target: (auto-finds player)
+│   ├─ Track Target: ✓
+│   ├─ Muzzle Point: MuzzlePoint ← DRAG CHILD HERE
+│   └─ Min Spawn Distance: 1.5
+└─ MuzzlePoint (Child GameObject)
+    └─ Transform (positioned in front)
+
+
+═══════════════════════════════════════════════════════════════
+  AVAILABLE CONFIGS (in Assets/Data/EnemyConfigs/)
+═══════════════════════════════════════════════════════════════
+
+PistolInfantry.asset       → 15 rounds, 20 dmg, 2/sec
+ShotgunRusher.asset        → 7 rounds, 80 dmg, 8 pellets
+Grenadier.asset            → 5 grenades, 80 blast dmg
+AssaultRifleSoldier.asset  → 30 rounds, 30 dmg, 3-burst
+MachineGunner.asset        → 150 rounds, 40 dmg, 10/sec
+Sniper.asset               → 1 round, 120 dmg, laser telegraph
+
+
+═══════════════════════════════════════════════════════════════
+  TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════
+
+❌ Enemy doesn't fire
+   → Check Config is assigned in EnemyLogic
+   → Check player has "Player" tag
+
+❌ Bullets spawn inside enemy
+   → Increase Min Spawn Distance to 2.0
+   → Create MuzzlePoint child and assign it
+
+❌ Enemy takes no damage
+   → Check Health component is attached
+   → Check Collider is NOT set to Trigger
+
+❌ Console errors
+   → Check all 6 configs were created (Warspite menu)
+   → Check EnemyLogic.cs and EnemyConfig.cs compiled
+
+
+═══════════════════════════════════════════════════════════════
+  QUICK TEST
+═══════════════════════════════════════════════════════════════
+
+1. Create enemy prefab (follow steps above)
+2. Drag into scene near player
+3. Press Play
+4. Enemy should:
+   ✓ Turn toward player
+   ✓ Fire red projectiles
+   ✓ Reload when empty
+   ✓ Die when health reaches 0
+
+If all ✓ → Success! Create more enemy types!
+
+
+═══════════════════════════════════════════════════════════════
