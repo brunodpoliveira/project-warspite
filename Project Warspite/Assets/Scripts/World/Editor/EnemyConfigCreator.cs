@@ -116,8 +116,8 @@ namespace Warspite.World.Editor
             config.baseDamage = 80f; // Blast damage
             config.useDamageFalloff = false; // Grenades use radius
             
-            config.muzzleSpeed = 30f; // Arc trajectory
-            config.projectileSize = 0.3f;
+            config.muzzleSpeed = 20f; // Lower speed for arc trajectory
+            config.projectileSize = 0.5f; // Bigger so it's visible
             
             config.baseSpreadAngle = 1f; // Accurate throw
             config.spreadMultiplier = 0.02f;
@@ -128,6 +128,7 @@ namespace Warspite.World.Editor
             config.grenadeShrapnelDamage = 40f;
             config.grenadeTimer = 3f;
             config.grenadeBlastRadius = 5f;
+            config.grenadeArcPreference = 0.3f; // Shallow arc (0=flat, 1=steep)
             
             config.projectileColor = Color.green;
             config.projectileEmission = 1.5f;

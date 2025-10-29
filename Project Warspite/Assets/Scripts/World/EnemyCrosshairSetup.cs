@@ -13,10 +13,11 @@ namespace Warspite.World
         [Header("Crosshair Settings")]
         [SerializeField] private bool autoCreateCrosshair = true;
         [SerializeField] private Vector3 crosshairOffset = new Vector3(0, 2f, 0); // Above enemy head
-        [SerializeField] private float crosshairSize = 50f;
-        [SerializeField] private Color readyColor = Color.green;
-        [SerializeField] private Color chargingColor = Color.yellow;
-        [SerializeField] private Color firingColor = Color.red;
+        // Note: crosshairSize, colors are for future use when we add more crosshair customization
+        // [SerializeField] private float crosshairSize = 50f;
+        // [SerializeField] private Color readyColor = Color.green;
+        // [SerializeField] private Color chargingColor = Color.yellow;
+        // [SerializeField] private Color firingColor = Color.red;
 
         private TurningCrosshair crosshair;
         private EnemyLogic enemyLogic;

@@ -16,14 +16,14 @@ MonoBehaviour:
   enemyType: 2
   maxHealth: 100
   weaponType: 2
-  magazineSize: 5
+  magazineSize: 1
   reloadTime: 3
-  fireRate: 0.5
+  fireRate: 5
   burstCount: 1
-  burstDelay: 0.1
+  burstDelay: 8
   baseDamage: 80
   useDamageFalloff: 0
-  muzzleSpeed: 30
+  muzzleSpeed: 40
   projectileSize: 0.3
   projectilePrefab: {fileID: 0}
   baseSpreadAngle: 1

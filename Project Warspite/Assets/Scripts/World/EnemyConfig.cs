@@ -50,6 +50,9 @@ namespace Warspite.World
         public float grenadeShrapnelDamage = 40f;
         public float grenadeTimer = 3f;
         public float grenadeBlastRadius = 5f;
+        [Tooltip("Arc preference: 0 = low/flat arc, 1 = high/steep arc")]
+        [Range(0f, 1f)]
+        public float grenadeArcPreference = 0.3f; // 0 = flat, 1 = high
 
         [Header("Sniper Settings (Sniper only)")]
         public bool usesLaserTelegraph = false;

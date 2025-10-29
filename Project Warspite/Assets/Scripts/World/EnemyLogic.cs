@@ -223,30 +223,49 @@ namespace Warspite.World
             }
 
             // Calculate aim direction
+            bool isGrenade = config.usesGrenades;
+            
             if (trackTarget && target != null)
             {
                 float distanceToTarget = Vector3.Distance(spawnPosition, target.position);
 
-                // Calculate ballistic trajectory
-                aimDirection = CalculateBallisticVelocity(spawnPosition, target.position, config.muzzleSpeed);
-
-                // If ballistic calculation fails, aim directly
-                if (aimDirection == Vector3.zero)
+                if (isGrenade)
                 {
+                    // For grenades: Calculate ballistic trajectory (returns velocity vector)
+                    aimDirection = CalculateBallisticVelocity(spawnPosition, target.position, config.muzzleSpeed, config.grenadeArcPreference);
+
+                    // If ballistic calculation fails, use arc based on preference
+                    if (aimDirection == Vector3.zero)
+                    {
+                        Vector3 toTarget = (target.position - spawnPosition).normalized;
+                        float fallbackAngle = Mathf.Lerp(30f, 60f, config.grenadeArcPreference) * Mathf.Deg2Rad;
+                        aimDirection = toTarget * config.muzzleSpeed * Mathf.Cos(fallbackAngle) + Vector3.up * config.muzzleSpeed * Mathf.Sin(fallbackAngle);
+                    }
+                    
+                    // Apply slight spread to grenades (but don't normalize, keep velocity)
+                    if (config.useAccuracyCone)
+                    {
+                        float totalSpread = config.baseSpreadAngle + (distanceToTarget * config.spreadMultiplier);
+                        aimDirection = ApplySpread(aimDirection.normalized, totalSpread) * aimDirection.magnitude;
+                    }
+                }
+                else
+                {
+                    // For bullets: Calculate direction (will be multiplied by speed later)
                     aimDirection = (target.position - spawnPosition).normalized;
-                }
+                    
+                    // Apply accuracy cone
+                    if (config.useAccuracyCone)
+                    {
+                        float totalSpread = config.baseSpreadAngle + (distanceToTarget * config.spreadMultiplier);
+                        aimDirection = ApplySpread(aimDirection, totalSpread);
+                    }
 
-                // Apply accuracy cone
-                if (config.useAccuracyCone)
-                {
-                    float totalSpread = config.baseSpreadAngle + (distanceToTarget * config.spreadMultiplier);
-                    aimDirection = ApplySpread(aimDirection, totalSpread);
-                }
-
-                // Apply shotgun pellet spread
-                if (config.weaponType == WeaponType.Shotgun && totalPellets > 1)
-                {
-                    aimDirection = ApplySpread(aimDirection, config.pelletSpread);
+                    // Apply shotgun pellet spread
+                    if (config.weaponType == WeaponType.Shotgun && totalPellets > 1)
+                    {
+                        aimDirection = ApplySpread(aimDirection, config.pelletSpread);
+                    }
                 }
             }
             else
@@ -272,8 +291,8 @@ namespace Warspite.World
                     config.grenadeTimer
                 );
                 
-                // Launch grenade with arc
-                grenade.Launch(aimDirection.normalized * config.muzzleSpeed);
+                // Launch grenade with ballistic velocity (already includes speed and arc)
+                grenade.Launch(aimDirection);
             }
             else if (projectile != null)
             {
@@ -283,7 +302,7 @@ namespace Warspite.World
                 // Set falloff settings from config
                 projectile.SetUseDamageFalloff(config.useDamageFalloff);
                 
-                // Launch projectile
+                // Launch projectile (direction * speed)
                 projectile.Launch(aimDirection.normalized * config.muzzleSpeed);
             }
         }
@@ -318,6 +337,24 @@ namespace Warspite.World
             Rigidbody rb = obj.AddComponent<Rigidbody>();
             rb.mass = isGrenadier ? 0.5f : 0.1f; // Grenades are heavier
             rb.useGravity = true;
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous; // Better collision detection
+            
+            // Configure collider for grenades (make them bouncy)
+            if (isGrenadier)
+            {
+                SphereCollider collider = obj.GetComponent<SphereCollider>();
+                if (collider != null)
+                {
+                    // Create bouncy physics material
+                    PhysicsMaterial bouncyMat = new PhysicsMaterial("GrenadeBounce");
+                    bouncyMat.bounciness = 0.6f;
+                    bouncyMat.dynamicFriction = 0.4f;
+                    bouncyMat.staticFriction = 0.4f;
+                    bouncyMat.frictionCombine = PhysicsMaterialCombine.Average;
+                    bouncyMat.bounceCombine = PhysicsMaterialCombine.Maximum;
+                    collider.material = bouncyMat;
+                }
+            }
 
             // Add appropriate script
             if (isGrenadier)
@@ -381,9 +418,10 @@ namespace Warspite.World
 
         /// <summary>
         /// Calculate ballistic trajectory velocity to hit a target.
-        /// Returns normalized direction * speed, or Vector3.zero if target is unreachable.
+        /// Returns velocity vector (not normalized), or Vector3.zero if target is unreachable.
         /// </summary>
-        private Vector3 CalculateBallisticVelocity(Vector3 origin, Vector3 target, float speed)
+        /// <param name="arcPreference">0 = low/flat arc, 1 = high/steep arc</param>
+        private Vector3 CalculateBallisticVelocity(Vector3 origin, Vector3 target, float speed, float arcPreference = 0.5f)
         {
             Vector3 toTarget = target - origin;
             Vector3 toTargetXZ = new Vector3(toTarget.x, 0, toTarget.z);
@@ -392,6 +430,12 @@ namespace Warspite.World
 
             // Gravity
             float gravity = Mathf.Abs(Physics.gravity.y);
+            
+            // Prevent division by zero
+            if (distance < 0.1f)
+            {
+                return Vector3.zero;
+            }
 
             // Calculate launch angle using ballistic trajectory formula
             float speedSq = speed * speed;
@@ -400,17 +444,29 @@ namespace Warspite.World
             // Check if target is reachable
             if (underRoot < 0)
             {
-                return Vector3.zero; // Target unreachable
+                // Target unreachable, use arc based on preference
+                float fallbackAngle = Mathf.Lerp(30f, 60f, arcPreference) * Mathf.Deg2Rad;
+                Vector3 direction = toTargetXZ.normalized;
+                float hSpeed = speed * Mathf.Cos(fallbackAngle);
+                float vSpeed = speed * Mathf.Sin(fallbackAngle);
+                return direction * hSpeed + Vector3.up * vSpeed;
             }
 
             float root = Mathf.Sqrt(underRoot);
-            float angle = Mathf.Atan((speedSq - root) / (gravity * distance));
+            float angle1 = Mathf.Atan((speedSq - root) / (gravity * distance)); // Low arc
+            float angle2 = Mathf.Atan((speedSq + root) / (gravity * distance)); // High arc
+            
+            // Lerp between low and high arc based on preference
+            // 0 = angle1 (flat), 1 = angle2 (steep)
+            float launchAngle = Mathf.Lerp(angle1, angle2, arcPreference);
 
-            // Calculate velocity direction
-            Vector3 direction = toTargetXZ.normalized;
-            float verticalComponent = Mathf.Tan(angle);
-
-            return (direction + Vector3.up * verticalComponent).normalized;
+            // Calculate velocity components
+            Vector3 horizontalDirection = toTargetXZ.normalized;
+            float horizontalSpeed = speed * Mathf.Cos(launchAngle);
+            float verticalSpeed = speed * Mathf.Sin(launchAngle);
+            
+            // Return actual velocity vector (NOT normalized)
+            return horizontalDirection * horizontalSpeed + Vector3.up * verticalSpeed;
         }
 
         // Gizmos for debugging
