@@ -72,8 +72,21 @@ namespace Warspite.World
             currentAmmo = GetMagazineSize();
 
             // Setup laser for sniper
-            if (config.usesLaserTelegraph && laserRenderer != null)
+            if (config.usesLaserTelegraph)
             {
+                // Auto-create LineRenderer if needed
+                if (laserRenderer == null)
+                {
+                    laserRenderer = gameObject.AddComponent<LineRenderer>();
+                    laserRenderer.positionCount = 2;
+                    laserRenderer.useWorldSpace = true;
+                    
+                    // Find appropriate material/shader
+                    Material laserMat = new Material(Shader.Find("Sprites/Default"));
+                    laserMat.color = config.laserColor;
+                    laserRenderer.material = laserMat;
+                }
+                
                 laserRenderer.enabled = false;
                 laserRenderer.startColor = config.laserColor;
                 laserRenderer.endColor = config.laserColor;

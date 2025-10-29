@@ -20,7 +20,7 @@ MonoBehaviour:
   reloadTime: 2
   fireRate: 6
   burstCount: 3
-  burstDelay: 0.1
+  burstDelay: 0.5
   baseDamage: 30
   useDamageFalloff: 1
   muzzleSpeed: 100
@@ -36,6 +36,7 @@ MonoBehaviour:
   grenadeShrapnelDamage: 40
   grenadeTimer: 3
   grenadeBlastRadius: 5
+  grenadeArcPreference: 0.3
   usesLaserTelegraph: 0
   telegraphDuration: 1.5
   laserColor: {r: 1, g: 0, b: 0, a: 1}
