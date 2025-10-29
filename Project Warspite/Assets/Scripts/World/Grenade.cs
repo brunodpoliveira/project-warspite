@@ -314,14 +314,14 @@ namespace Warspite.World
             
             foreach (Collider hitCollider in hitColliders)
             {
-                Health health = hitCollider.GetComponent<Health>();
+                Health health = hitCollider.GetComponentInParent<Health>();
                 if (health != null && !health.IsDead)
                 {
                     // Check if grenade was thrown by player (caught)
                     bool isPlayerGrenade = IsCaught;
                     
                     // Don't damage enemies if thrown by enemy (friendly fire prevention)
-                    EnemyLogic enemy = hitCollider.GetComponent<EnemyLogic>();
+                    EnemyLogic enemy = hitCollider.GetComponentInParent<EnemyLogic>();
                     if (!isPlayerGrenade && enemy != null)
                     {
                         continue; // Skip enemy damage from enemy grenades

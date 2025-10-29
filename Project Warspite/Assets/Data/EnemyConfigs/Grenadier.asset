@@ -23,7 +23,7 @@ MonoBehaviour:
   burstDelay: 8
   baseDamage: 80
   useDamageFalloff: 0
-  muzzleSpeed: 40
+  muzzleSpeed: 20
   projectileSize: 0.3
   projectilePrefab: {fileID: 0}
   baseSpreadAngle: 1
@@ -36,6 +36,7 @@ MonoBehaviour:
   grenadeShrapnelDamage: 40
   grenadeTimer: 3
   grenadeBlastRadius: 5
+  grenadeArcPreference: 0.3
   usesLaserTelegraph: 0
   telegraphDuration: 1.5
   laserColor: {r: 1, g: 0, b: 0, a: 1}
