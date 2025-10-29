@@ -36,8 +36,9 @@ MonoBehaviour:
   grenadeShrapnelDamage: 40
   grenadeTimer: 3
   grenadeBlastRadius: 5
+  grenadeArcPreference: 0.3
   usesLaserTelegraph: 1
-  telegraphDuration: 1.5
+  telegraphDuration: 4
   laserColor: {r: 1, g: 0, b: 0, a: 1}
   projectileColor: {r: 1, g: 0, b: 1, a: 1}
   projectileEmission: 3

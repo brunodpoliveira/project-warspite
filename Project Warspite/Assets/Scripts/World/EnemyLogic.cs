@@ -103,6 +103,12 @@ namespace Warspite.World
                     target = player.transform;
                 }
             }
+            
+            // Auto-add health bar if missing
+            if (GetComponent<Warspite.UI.AutoHealthBar>() == null)
+            {
+                gameObject.AddComponent<Warspite.UI.AutoHealthBar>();
+            }
         }
 
         void Update()
