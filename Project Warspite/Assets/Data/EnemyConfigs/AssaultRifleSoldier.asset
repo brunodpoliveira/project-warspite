@@ -18,9 +18,9 @@ MonoBehaviour:
   weaponType: 3
   magazineSize: 30
   reloadTime: 2
-  fireRate: 6
+  fireRate: 0.6
   burstCount: 3
-  burstDelay: 0.5
+  burstDelay: 0.1
   baseDamage: 30
   useDamageFalloff: 1
   muzzleSpeed: 100

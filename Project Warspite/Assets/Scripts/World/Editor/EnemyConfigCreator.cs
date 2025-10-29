@@ -147,9 +147,9 @@ namespace Warspite.World.Editor
             config.weaponType = WeaponType.AssaultRifle;
             config.magazineSize = 30;
             config.reloadTime = 2f;
-            config.fireRate = 6f; // 6 rounds/sec (but in bursts)
+            config.fireRate = 0.67f; // ~1.5 sec between bursts (1/1.5 = 0.67)
             config.burstCount = 3; // 3-round burst
-            config.burstDelay = 0.1f;
+            config.burstDelay = 0.1f; // 0.1 sec between shots in burst
             
             config.baseDamage = 30f;
             config.useDamageFalloff = true;
