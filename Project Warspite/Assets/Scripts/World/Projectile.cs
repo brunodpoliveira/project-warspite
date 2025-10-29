@@ -117,14 +117,10 @@ namespace Warspite.World
 
         void OnCollisionEnter(Collision collision)
         {
-            Debug.Log($"[Projectile] Hit {collision.gameObject.name} (Layer: {LayerMask.LayerToName(collision.gameObject.layer)})");
-            
             // Try to damage whatever we hit (check object and parents)
             Health health = collision.gameObject.GetComponentInParent<Health>();
             if (health != null)
             {
-                Debug.Log($"[Projectile] Found Health component on {collision.gameObject.name}");
-                
                 // Don't damage if this projectile was shot by an enemy and hits another enemy
                 // (friendly fire prevention - could be made more sophisticated)
                 bool isEnemyHittingEnemy = !IsCaught && collision.gameObject.GetComponentInParent<EnemyLogic>() != null;
@@ -134,9 +130,7 @@ namespace Warspite.World
                     // Calculate damage with falloff
                     float finalDamage = CalculateDamageWithFalloff();
                     
-                    Debug.Log($"[Projectile] Dealing {finalDamage:F1} damage to {collision.gameObject.name}");
-                    
-                    // Debug logging
+                    // Debug logging (only if enabled)
                     if (debugDamageFalloff)
                     {
                         float distance = GetDistanceTraveled();
@@ -146,14 +140,6 @@ namespace Warspite.World
                     
                     health.TakeDamage(finalDamage);
                 }
-                else
-                {
-                    Debug.Log($"[Projectile] Skipping damage - enemy hitting enemy");
-                }
-            }
-            else
-            {
-                Debug.LogWarning($"[Projectile] No Health component found on {collision.gameObject.name}");
             }
 
             // Destroy projectile on impact (unless it's a caught one that should bounce)
