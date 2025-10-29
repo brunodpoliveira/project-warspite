@@ -142,8 +142,23 @@ namespace Warspite.World
                 }
             }
 
-            // Destroy projectile on impact (unless it's a caught one that should bounce)
-            if (destroyOnImpact && !IsCaught)
+            // Destroy projectile on impact
+            // Exception: Only keep alive if caught AND still held by player (has parent)
+            bool isHeldByPlayer = IsCaught && transform.parent != null;
+            
+            if (!isHeldByPlayer)
+            {
+                Destroy(gameObject);
+            }
+        }
+        
+        void OnCollisionStay(Collision collision)
+        {
+            // If projectile is touching something and not moving, destroy it
+            // Exception: Only keep alive if caught AND still held by player
+            bool isHeldByPlayer = IsCaught && transform.parent != null;
+            
+            if (!isHeldByPlayer && rb != null && rb.linearVelocity.magnitude < 0.5f)
             {
                 Destroy(gameObject);
             }
