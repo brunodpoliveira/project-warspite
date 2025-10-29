@@ -35,6 +35,13 @@ namespace Warspite.World
 
         [Header("Sniper Laser (if applicable)")]
         [SerializeField] private LineRenderer laserRenderer;
+        
+        [Header("Movement")]
+        [SerializeField] private bool enableMovement = true;
+        [SerializeField] private float moveSpeed = 2f;
+        [SerializeField] private float strafeInterval = 2f; // Change direction every N seconds
+        [SerializeField] private float minDistanceToTarget = 5f;
+        [SerializeField] private float maxDistanceToTarget = 15f;
 
         private float lastFireTime;
         private int burstsFired;
@@ -43,6 +50,10 @@ namespace Warspite.World
         private float reloadStartTime;
         private bool isChargingShot = false; // For sniper telegraph
         private float chargeStartTime;
+        
+        // Movement state
+        private Vector3 moveDirection;
+        private float nextMoveChangeTime;
 
         // Public properties for UI/debugging
         public EnemyConfig Config => config;
@@ -115,6 +126,12 @@ namespace Warspite.World
         void Update()
         {
             if (config == null) return;
+            
+            // Handle movement (except for snipers and if disabled)
+            if (enableMovement && config.enemyType != EnemyType.Sniper && target != null)
+            {
+                UpdateMovement();
+            }
 
             // Handle sniper telegraph charging
             if (config.usesLaserTelegraph && isChargingShot)
@@ -523,6 +540,78 @@ namespace Warspite.World
             
             // Return actual velocity vector (NOT normalized)
             return horizontalDirection * horizontalSpeed + Vector3.up * verticalSpeed;
+        }
+        
+        private void UpdateMovement()
+        {
+            float distanceToTarget = Vector3.Distance(transform.position, target.position);
+            
+            // Change movement direction periodically
+            if (Time.time >= nextMoveChangeTime)
+            {
+                ChooseNewMoveDirection(distanceToTarget);
+                nextMoveChangeTime = Time.time + strafeInterval;
+            }
+            
+            // Apply movement
+            if (moveDirection != Vector3.zero)
+            {
+                transform.position += moveDirection * moveSpeed * Time.deltaTime;
+            }
+            
+            // Always face target
+            Vector3 directionToTarget = (target.position - transform.position);
+            directionToTarget.y = 0; // Keep on horizontal plane
+            if (directionToTarget != Vector3.zero)
+            {
+                transform.rotation = Quaternion.LookRotation(directionToTarget);
+            }
+        }
+        
+        private void ChooseNewMoveDirection(float distanceToTarget)
+        {
+            // Decide whether to move forward/back or strafe
+            bool shouldMoveCloser = distanceToTarget > maxDistanceToTarget;
+            bool shouldMoveAway = distanceToTarget < minDistanceToTarget;
+            
+            Vector3 toTarget = (target.position - transform.position).normalized;
+            toTarget.y = 0; // Keep on horizontal plane
+            
+            Vector3 right = Vector3.Cross(Vector3.up, toTarget); // Perpendicular to target direction
+            
+            if (shouldMoveCloser)
+            {
+                // Move forward (toward target) with some strafe
+                moveDirection = toTarget + right * Random.Range(-0.5f, 0.5f);
+            }
+            else if (shouldMoveAway)
+            {
+                // Move backward (away from target) with some strafe
+                moveDirection = -toTarget + right * Random.Range(-0.5f, 0.5f);
+            }
+            else
+            {
+                // Strafe left or right, occasionally forward/back
+                float choice = Random.value;
+                if (choice < 0.4f)
+                {
+                    moveDirection = right; // Strafe right
+                }
+                else if (choice < 0.8f)
+                {
+                    moveDirection = -right; // Strafe left
+                }
+                else if (choice < 0.9f)
+                {
+                    moveDirection = toTarget; // Move forward
+                }
+                else
+                {
+                    moveDirection = -toTarget; // Move back
+                }
+            }
+            
+            moveDirection.Normalize();
         }
 
         // Gizmos for debugging
