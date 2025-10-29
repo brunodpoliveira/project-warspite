@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 using Warspite.UI;
 
 namespace Warspite.World
@@ -207,10 +208,34 @@ namespace Warspite.World
 
             // Shotgun fires multiple pellets
             int projectileCount = config.weaponType == WeaponType.Shotgun ? config.pelletsPerShot : 1;
+            
+            // Store all pellets to disable collision between them
+            List<GameObject> pellets = new List<GameObject>();
 
             for (int i = 0; i < projectileCount; i++)
             {
-                FireSingleProjectile(i, projectileCount);
+                GameObject pellet = FireSingleProjectile(i, projectileCount);
+                if (pellet != null)
+                {
+                    pellets.Add(pellet);
+                }
+            }
+            
+            // Disable collision between pellets from the same shot
+            if (pellets.Count > 1)
+            {
+                for (int i = 0; i < pellets.Count; i++)
+                {
+                    for (int j = i + 1; j < pellets.Count; j++)
+                    {
+                        Collider col1 = pellets[i].GetComponent<Collider>();
+                        Collider col2 = pellets[j].GetComponent<Collider>();
+                        if (col1 != null && col2 != null)
+                        {
+                            Physics.IgnoreCollision(col1, col2);
+                        }
+                    }
+                }
             }
 
             // Consume ammo (one ammo per shot, even if multiple pellets)
@@ -223,7 +248,7 @@ namespace Warspite.World
             }
         }
 
-        private void FireSingleProjectile(int pelletIndex, int totalPellets)
+        private GameObject FireSingleProjectile(int pelletIndex, int totalPellets)
         {
             // Create projectile
             GameObject proj = CreateProjectile();
@@ -239,6 +264,16 @@ namespace Warspite.World
             else
             {
                 spawnPosition = transform.position + Vector3.up * 0.5f;
+            }
+            
+            // For shotgun pellets, offset spawn position slightly to prevent collision
+            if (totalPellets > 1)
+            {
+                // Spread pellets in a small circle around the spawn point
+                float angle = (pelletIndex / (float)totalPellets) * 360f * Mathf.Deg2Rad;
+                float offsetRadius = 0.1f; // Small offset to prevent collision
+                Vector3 offset = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0) * offsetRadius;
+                spawnPosition += offset;
             }
 
             // Calculate aim direction
@@ -324,6 +359,8 @@ namespace Warspite.World
                 // Launch projectile (direction * speed)
                 projectile.Launch(aimDirection.normalized * config.muzzleSpeed);
             }
+            
+            return proj;
         }
 
         private Vector3 ApplySpread(Vector3 direction, float spreadAngle)
