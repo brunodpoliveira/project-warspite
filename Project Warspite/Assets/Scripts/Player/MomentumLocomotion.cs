@@ -15,6 +15,12 @@ namespace Warspite.Player
         [SerializeField] private float acceleration = 20f;
         [SerializeField] private float deceleration = 15f;
         [SerializeField] private float airControl = 0.3f;
+        
+        [Header("Time Dilation Speed Boost")]
+        [SerializeField] private bool enableTimeDilationBoost = true;
+        [SerializeField] private float speedMultiplierAtMaxDilation = 3f; // 3x speed at 0.05x time
+        [Tooltip("Speed formula: baseSpeed * (1 + (1 - timeScale) * multiplier)")]
+        [SerializeField] private AnimationCurve speedBoostCurve = AnimationCurve.Linear(0f, 1f, 1f, 0f);
 
         [Header("Physics")]
         [SerializeField] private float gravity = 20f;
@@ -111,8 +117,20 @@ namespace Warspite.Player
 
             if (desiredMoveDir.sqrMagnitude > 0.01f)
             {
+                // Calculate speed boost from time dilation
+                float currentMaxSpeed = maxSpeed;
+                if (enableTimeDilationBoost)
+                {
+                    // As time slows down (timeScale → 0), player gets faster
+                    // timeScale 1.0 (normal) → no boost
+                    // timeScale 0.05 (max dilation) → max boost
+                    float dilationAmount = 1f - Time.timeScale; // 0 at normal time, 0.95 at max dilation
+                    float boostMultiplier = speedBoostCurve.Evaluate(Time.timeScale);
+                    currentMaxSpeed = maxSpeed * (1f + dilationAmount * speedMultiplierAtMaxDilation * boostMultiplier);
+                }
+                
                 // Accelerate towards desired direction
-                Vector3 targetVelocity = desiredMoveDir * maxSpeed;
+                Vector3 targetVelocity = desiredMoveDir * currentMaxSpeed;
                 float accelRate = isGrounded ? acceleration : acceleration * airControl;
                 horizontalVelocity = Vector3.MoveTowards(
                     horizontalVelocity,

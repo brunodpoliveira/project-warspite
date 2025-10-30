@@ -42,6 +42,10 @@ namespace Warspite.World
         [SerializeField] private float strafeInterval = 2f; // Change direction every N seconds
         [SerializeField] private float minDistanceToTarget = 5f;
         [SerializeField] private float maxDistanceToTarget = 15f;
+        
+        [Header("Tracking")]
+        [SerializeField] private float trackingSpeed = 5f; // Rotation speed (degrees per second in real-time)
+        [SerializeField] private bool scaleTrackingWithTime = true; // Slower tracking in time dilation
 
         private float lastFireTime;
         private int burstsFired;
@@ -559,12 +563,18 @@ namespace Warspite.World
                 transform.position += moveDirection * moveSpeed * Time.deltaTime;
             }
             
-            // Always face target
+            // Rotate toward target (scaled by time dilation if enabled)
             Vector3 directionToTarget = (target.position - transform.position);
             directionToTarget.y = 0; // Keep on horizontal plane
             if (directionToTarget != Vector3.zero)
             {
-                transform.rotation = Quaternion.LookRotation(directionToTarget);
+                Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);
+                
+                // Scale rotation speed by time scale (slower tracking in time dilation)
+                float rotationSpeed = scaleTrackingWithTime ? trackingSpeed * Time.timeScale : trackingSpeed;
+                float step = rotationSpeed * Time.deltaTime;
+                
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, step);
             }
         }
         

@@ -499,7 +499,7 @@ PrefabInstance:
     - target: {fileID: 5426268717237769377, guid: 8d100b8a61616f7449b724510809f7e6, type: 3}
       propertyPath: config
       value: 
-      objectReference: {fileID: 11400000, guid: 2b9b91b61f6e11147bd91d9029afce03, type: 2}
+      objectReference: {fileID: 11400000, guid: 318ed270bf5bede4fa0d22edcbd27814, type: 2}
     - target: {fileID: 5977781942601129479, guid: 8d100b8a61616f7449b724510809f7e6, type: 3}
       propertyPath: m_LocalPosition.x
       value: 36.279392
@@ -1536,6 +1536,32 @@ MonoBehaviour:
   acceleration: 20
   deceleration: 15
   airControl: 0.3
+  enableTimeDilationBoost: 1
+  speedMultiplierAtMaxDilation: 3
+  speedBoostCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: -1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: -1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   gravity: 20
   groundCheckDistance: 0.2
   wallBounceThreshold: 5
