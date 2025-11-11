@@ -1,9 +1,23 @@
 using UnityEngine;
 using System.Collections.Generic;
 using Warspite.UI;
+using Warspite.Systems;
 
 namespace Warspite.World
 {
+    [System.Serializable]
+    public class EnemyTrackingSettings
+    {
+        [Tooltip("Base rotation speed in degrees per second before modifiers.")]
+        public float baseSpeed = 5f;
+        [Tooltip("If enabled, time dilation scales tracking using the multipliers below.")]
+        public bool scaleWithTime = true;
+        [Tooltip("Multiplier applied per time dilation level (index 0 = normal, 3 = deepest slow).")]
+        public float[] levelMultipliers = new float[4] { 1f, 0.65f, 0.4f, 0.2f };
+        [Tooltip("Lower bound on all computed multipliers so enemies never completely freeze.")]
+        [Range(0.01f, 1f)] public float minMultiplier = 0.05f;
+    }
+
     /// <summary>
     /// Main enemy behavior script. Uses EnemyConfig for stats.
     /// Handles firing, reloading, and projectile spawning.
@@ -44,8 +58,8 @@ namespace Warspite.World
         [SerializeField] private float maxDistanceToTarget = 15f;
         
         [Header("Tracking")]
-        [SerializeField] private float trackingSpeed = 5f; // Rotation speed (degrees per second in real-time)
-        [SerializeField] private bool scaleTrackingWithTime = true; // Slower tracking in time dilation
+        [SerializeField] private EnemyTrackingSettings trackingSettings = new EnemyTrackingSettings();
+        [SerializeField] private TimeDilationController timeController;
 
         private float lastFireTime;
         private int burstsFired;
@@ -68,6 +82,24 @@ namespace Warspite.World
         public int CurrentAmmo => currentAmmo;
         public int MagazineSize => GetMagazineSize();
 
+        void OnValidate()
+        {
+            EnsureTrackingSettings();
+        }
+
+        private void EnsureTrackingSettings()
+        {
+            if (trackingSettings == null)
+            {
+                trackingSettings = new EnemyTrackingSettings();
+            }
+
+            if (trackingSettings.levelMultipliers == null || trackingSettings.levelMultipliers.Length == 0)
+            {
+                trackingSettings.levelMultipliers = new float[4] { 1f, 0.65f, 0.4f, 0.2f };
+            }
+        }
+
         // Helper methods to get values with overrides
         private float GetFireRate() => fireRateOverride > 0 ? fireRateOverride : config.fireRate;
         private float GetFireInterval() => 1f / GetFireRate();
@@ -77,6 +109,8 @@ namespace Warspite.World
 
         void Start()
         {
+            EnsureTrackingSettings();
+
             if (config == null)
             {
                 Debug.LogError($"EnemyLogic on {gameObject.name} has no EnemyConfig assigned!");
@@ -118,6 +152,11 @@ namespace Warspite.World
                 {
                     target = player.transform;
                 }
+            }
+
+            if (trackingSettings.scaleWithTime && timeController == null)
+            {
+                timeController = FindFirstObjectByType<TimeDilationController>();
             }
             
             // Auto-add health bar if missing
@@ -570,12 +609,32 @@ namespace Warspite.World
             {
                 Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);
                 
-                // Scale rotation speed by time scale (slower tracking in time dilation)
-                float rotationSpeed = scaleTrackingWithTime ? trackingSpeed * Time.timeScale : trackingSpeed;
+                // Scale rotation speed by time dilation curve (simulates player reflex advantage)
+                float rotationMultiplier = trackingSettings.scaleWithTime ? EvaluateTrackingMultiplier() : 1f;
+                float rotationSpeed = trackingSettings.baseSpeed * rotationMultiplier;
                 float step = rotationSpeed * Time.deltaTime;
                 
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, step);
             }
+        }
+        
+        private float EvaluateTrackingMultiplier()
+        {
+            float multiplier = Mathf.Max(Time.timeScale, trackingSettings.minMultiplier);
+
+            if (timeController == null && trackingSettings.scaleWithTime)
+            {
+                timeController = FindFirstObjectByType<TimeDilationController>();
+            }
+
+            if (timeController != null && trackingSettings.levelMultipliers != null && trackingSettings.levelMultipliers.Length > 0)
+            {
+                int levelIndex = Mathf.Clamp(timeController.CurrentLevel, 0, trackingSettings.levelMultipliers.Length - 1);
+                float levelMultiplier = Mathf.Max(trackingSettings.levelMultipliers[levelIndex], trackingSettings.minMultiplier);
+                multiplier *= levelMultiplier;
+            }
+
+            return Mathf.Max(multiplier, trackingSettings.minMultiplier);
         }
         
         private void ChooseNewMoveDirection(float distanceToTarget)

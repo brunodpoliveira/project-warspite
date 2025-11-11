@@ -14,6 +14,7 @@ namespace Warspite.Core
         [SerializeField] private float currentHealth;
         [SerializeField] private bool destroyOnDeath = true;
         [SerializeField] private float destroyDelay = 0f;
+        [SerializeField] private bool invulnerable = false;
 
         [Header("Events")]
         public UnityEvent<float> OnDamaged;
@@ -24,6 +25,7 @@ namespace Warspite.Core
         public float CurrentHealth => currentHealth;
         public float HealthPercent => currentHealth / maxHealth;
         public bool IsDead { get; private set; }
+        public bool IsInvulnerable => invulnerable;
 
         void Awake()
         {
@@ -33,7 +35,7 @@ namespace Warspite.Core
 
         public void TakeDamage(float amount)
         {
-            if (IsDead) return;
+            if (IsDead || invulnerable) return;
 
             currentHealth -= amount;
             currentHealth = Mathf.Max(currentHealth, 0);
@@ -81,6 +83,11 @@ namespace Warspite.Core
         public bool IsCritical(float threshold = 0.25f)
         {
             return HealthPercent <= threshold;
+        }
+
+        public void SetInvulnerable(bool value)
+        {
+            invulnerable = value;
         }
     }
 }

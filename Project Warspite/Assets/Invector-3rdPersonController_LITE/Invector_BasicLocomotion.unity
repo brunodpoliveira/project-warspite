@@ -652,7 +652,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8297488810006850172, guid: 8d100b8a61616f7449b724510809f7e6, type: 3}
       propertyPath: m_Name
-      value: 'enemy_[type]'
+      value: enemy_mg
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1006,6 +1006,26 @@ PrefabInstance:
       propertyPath: config
       value: 
       objectReference: {fileID: 11400000, guid: bfe883bf5e0f2d5448b69a5e20885632, type: 2}
+    - target: {fileID: 5426268717237769377, guid: 8d100b8a61616f7449b724510809f7e6, type: 3}
+      propertyPath: trackingSpeed
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5426268717237769377, guid: 8d100b8a61616f7449b724510809f7e6, type: 3}
+      propertyPath: timeController
+      value: 
+      objectReference: {fileID: 1202316785}
+    - target: {fileID: 5426268717237769377, guid: 8d100b8a61616f7449b724510809f7e6, type: 3}
+      propertyPath: trackingSettings.baseSpeed
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5426268717237769377, guid: 8d100b8a61616f7449b724510809f7e6, type: 3}
+      propertyPath: trackingLevelMultipliers.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5426268717237769377, guid: 8d100b8a61616f7449b724510809f7e6, type: 3}
+      propertyPath: 'trackingLevelMultipliers.Array.data[4]'
+      value: 0.2
+      objectReference: {fileID: 0}
     - target: {fileID: 5977781942601129479, guid: 8d100b8a61616f7449b724510809f7e6, type: 3}
       propertyPath: m_LocalPosition.x
       value: 41.172485
@@ -2617,7 +2637,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8297488810006850172, guid: 8d100b8a61616f7449b724510809f7e6, type: 3}
       propertyPath: m_Name
-      value: enemy_[type] (1)
+      value: enemy_shotgun
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5222,12 +5242,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Warspite.Systems.TimeDilationResource
   maxResource: 1000
   currentResource: 0
-  rechargeRate: 55
+  rechargeRate: 25
   normalDrain: 0
   level1Drain: 5
-  level2Drain: 10
-  level3Drain: 25
+  level2Drain: 20
+  level3Drain: 50
   timeController: {fileID: 1202316785}
+  allowInfiniteResourceToggle: 1
+  infiniteResourceToggleKey: 283
+  infiniteResourceEnabled: 0
 --- !u!1 &1205848653
 GameObject:
   m_ObjectHideFlags: 0
@@ -6059,6 +6082,7 @@ MonoBehaviour:
   currentHealth: 0
   destroyOnDeath: 1
   destroyDelay: 0
+  invulnerable: 0
   OnDamaged:
     m_PersistentCalls:
       m_Calls: []
@@ -6087,6 +6111,9 @@ MonoBehaviour:
   suckHealAmount: 30
   gibbedHealPenalty: 0.5
   suckKey: 102
+  allowGodModeToggle: 1
+  godModeToggleKey: 103
+  godModeEnabled: 0
 --- !u!114 &1479757059
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6166,7 +6193,7 @@ MonoBehaviour:
   locomotion: {fileID: 0}
   timeController: {fileID: 0}
   playerHealth: {fileID: 0}
-  minSpeedForBoom: 8
+  minSpeedForBoom: 30
   requireDeepestSlow: 1
   wakeRadius: 2
   segmentSpacing: 0.5

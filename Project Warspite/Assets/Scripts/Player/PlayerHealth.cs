@@ -21,13 +21,31 @@ namespace Warspite.Player
         [SerializeField] private float suckHealAmount = 30f;
         [SerializeField] private float gibbedHealPenalty = 0.5f; // Multiplier if enemy is gibbed
         [SerializeField] private KeyCode suckKey = KeyCode.F;
+        
+        [Header("Debug")]
+        [SerializeField] private bool allowGodModeToggle = true;
+        [SerializeField] private KeyCode godModeToggleKey = KeyCode.G;
+        [SerializeField] private bool godModeEnabled = false;
 
         private Health health;
         private float timeSinceLastDamage;
 
+        public bool IsGodModeEnabled => godModeEnabled;
+
         void Awake()
         {
             health = GetComponent<Health>();
+
+            if (health == null)
+            {
+                Debug.LogError("PlayerHealth: Missing Health component!");
+                return;
+            }
+
+            if (godModeEnabled)
+            {
+                health.SetInvulnerable(true);
+            }
         }
 
         void Start()
@@ -43,6 +61,7 @@ namespace Warspite.Player
 
         void Update()
         {
+            HandleGodModeToggle();
             HandleDegeneration();
             HandleVampireSuck();
         }
@@ -80,6 +99,21 @@ namespace Warspite.Player
             if (Input.GetKeyDown(suckKey))
             {
                 AttemptSuck();
+            }
+        }
+
+        private void HandleGodModeToggle()
+        {
+            if (!allowGodModeToggle || health == null)
+            {
+                return;
+            }
+
+            if (Input.GetKeyDown(godModeToggleKey))
+            {
+                godModeEnabled = !godModeEnabled;
+                health.SetInvulnerable(godModeEnabled);
+                Debug.Log($"PlayerHealth: God mode {(godModeEnabled ? "ENABLED" : "disabled")}");
             }
         }
 

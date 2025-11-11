@@ -22,12 +22,18 @@ namespace Warspite.Systems
 
         [Header("References")]
         [SerializeField] private TimeDilationController timeController;
+        
+        [Header("Debug")]
+        [SerializeField] private bool allowInfiniteResourceToggle = true;
+        [SerializeField] private KeyCode infiniteResourceToggleKey = KeyCode.F2;
+        [SerializeField] private bool infiniteResourceEnabled = false;
 
         public float MaxResource => maxResource;
         public float CurrentResource => currentResource;
         public float ResourcePercent => currentResource / maxResource;
         public bool IsEmpty => currentResource <= 0;
         public bool IsFull => currentResource >= maxResource;
+        public bool InfiniteResourceEnabled => infiniteResourceEnabled;
 
         void Awake()
         {
@@ -46,6 +52,8 @@ namespace Warspite.Systems
         {
             if (timeController == null) return;
 
+            HandleDebugToggle();
+
             // Use unscaled time for consistent resource management
             float delta = Time.unscaledDeltaTime;
 
@@ -58,14 +66,17 @@ namespace Warspite.Systems
             }
             else
             {
-                // Time dilation active - drain based on level
-                float drainRate = GetDrainRate(currentLevel);
-                Drain(drainRate * delta);
-
-                // If depleted, force back to normal time
-                if (IsEmpty)
+                if (!infiniteResourceEnabled)
                 {
-                    // This will be handled by TimeDilationController checking this component
+                    // Time dilation active - drain based on level
+                    float drainRate = GetDrainRate(currentLevel);
+                    Drain(drainRate * delta);
+
+                    // If depleted, force back to normal time
+                    if (IsEmpty)
+                    {
+                        // This will be handled by TimeDilationController checking this component
+                    }
                 }
             }
         }
@@ -95,12 +106,31 @@ namespace Warspite.Systems
 
         public bool CanUseDilation()
         {
-            return currentResource > 0;
+            return infiniteResourceEnabled || currentResource > 0;
         }
 
         public void SetResource(float amount)
         {
             currentResource = Mathf.Clamp(amount, 0, maxResource);
+        }
+
+        public void SetInfiniteResource(bool enabled)
+        {
+            infiniteResourceEnabled = enabled;
+        }
+
+        private void HandleDebugToggle()
+        {
+            if (!allowInfiniteResourceToggle)
+            {
+                return;
+            }
+
+            if (Input.GetKeyDown(infiniteResourceToggleKey))
+            {
+                infiniteResourceEnabled = !infiniteResourceEnabled;
+                Debug.Log($"TimeDilationResource: Infinite resource {(infiniteResourceEnabled ? "ENABLED" : "disabled")}");
+            }
         }
     }
 }

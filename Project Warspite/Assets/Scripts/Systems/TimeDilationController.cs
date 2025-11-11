@@ -81,7 +81,7 @@ namespace Warspite.Systems
         private void CheckResourceDepletion()
         {
             // If resource is depleted, force back to normal time
-            if (resource != null && resource.IsEmpty && currentLevel > 0)
+            if (resource != null && !resource.InfiniteResourceEnabled && resource.IsEmpty && currentLevel > 0)
             {
                 currentLevel = 0;
                 ApplyTimeLevel();
