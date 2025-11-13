@@ -1011,12 +1011,16 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5426268717237769377, guid: 8d100b8a61616f7449b724510809f7e6, type: 3}
+      propertyPath: enableMovement
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5426268717237769377, guid: 8d100b8a61616f7449b724510809f7e6, type: 3}
       propertyPath: timeController
       value: 
       objectReference: {fileID: 1202316785}
     - target: {fileID: 5426268717237769377, guid: 8d100b8a61616f7449b724510809f7e6, type: 3}
       propertyPath: trackingSettings.baseSpeed
-      value: 2
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 5426268717237769377, guid: 8d100b8a61616f7449b724510809f7e6, type: 3}
       propertyPath: trackingLevelMultipliers.Array.size
