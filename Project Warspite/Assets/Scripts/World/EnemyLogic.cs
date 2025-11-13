@@ -50,6 +50,9 @@ namespace Warspite.World
         [Header("Sniper Laser (if applicable)")]
         [SerializeField] private LineRenderer laserRenderer;
         
+        // Cached laser aim direction for snipers, so the beam does not perfectly snap to the player
+        private Vector3 laserAimDirection;
+        
         [Header("Movement")]
         [SerializeField] private bool enableMovement = true;
         [SerializeField] private float moveSpeed = 2f;
@@ -248,6 +251,25 @@ namespace Warspite.World
             {
                 laserRenderer.enabled = true;
             }
+
+            // Initialize laser aim direction toward current target at telegraph start
+            if (target != null)
+            {
+                Vector3 startPos = muzzlePoint != null ? muzzlePoint.position : transform.position + Vector3.up * 0.5f;
+                Vector3 initialDir = (target.position - startPos);
+                if (initialDir.sqrMagnitude > 0.0001f)
+                {
+                    laserAimDirection = initialDir.normalized;
+                }
+                else
+                {
+                    laserAimDirection = transform.forward;
+                }
+            }
+            else
+            {
+                laserAimDirection = transform.forward;
+            }
         }
 
         private void UpdateLaserTelegraph()
@@ -255,10 +277,30 @@ namespace Warspite.World
             if (laserRenderer == null || target == null) return;
 
             Vector3 startPos = muzzlePoint != null ? muzzlePoint.position : transform.position + Vector3.up * 0.5f;
-            Vector3 aimDir = (target.position - startPos).normalized;
+            Vector3 toTarget = (target.position - startPos);
+            if (toTarget.sqrMagnitude < 0.0001f)
+            {
+                toTarget = transform.forward;
+            }
+
+            Vector3 targetDir = toTarget.normalized;
+
+            // Rotate the cached laser direction toward the player with a capped angular speed
+            float rotationMultiplier = trackingSettings.scaleWithTime ? EvaluateTrackingMultiplier() : 1f;
+            float rotationSpeed = trackingSettings.baseSpeed * rotationMultiplier;
+            float maxRadiansThisFrame = rotationSpeed * Mathf.Deg2Rad * Time.deltaTime;
+
+            if (laserAimDirection.sqrMagnitude < 0.0001f)
+            {
+                laserAimDirection = targetDir;
+            }
+            else
+            {
+                laserAimDirection = Vector3.RotateTowards(laserAimDirection, targetDir, maxRadiansThisFrame, 0f);
+            }
 
             laserRenderer.SetPosition(0, startPos);
-            laserRenderer.SetPosition(1, startPos + aimDir * 100f); // Long laser
+            laserRenderer.SetPosition(1, startPos + laserAimDirection * 100f); // Long laser
         }
 
         private void FireProjectile()
@@ -345,10 +387,8 @@ namespace Warspite.World
 
                 if (isGrenade)
                 {
-                    // For grenades: Calculate ballistic trajectory (returns velocity vector)
                     aimDirection = CalculateBallisticVelocity(spawnPosition, target.position, config.muzzleSpeed, config.grenadeArcPreference);
 
-                    // If ballistic calculation fails, use arc based on preference
                     if (aimDirection == Vector3.zero)
                     {
                         Vector3 toTarget = (target.position - spawnPosition).normalized;
@@ -356,7 +396,6 @@ namespace Warspite.World
                         aimDirection = toTarget * config.muzzleSpeed * Mathf.Cos(fallbackAngle) + Vector3.up * config.muzzleSpeed * Mathf.Sin(fallbackAngle);
                     }
                     
-                    // Apply slight spread to grenades (but don't normalize, keep velocity)
                     if (config.useAccuracyCone)
                     {
                         float totalSpread = config.baseSpreadAngle + (distanceToTarget * config.spreadMultiplier);
@@ -365,17 +404,22 @@ namespace Warspite.World
                 }
                 else
                 {
-                    // For bullets: Calculate direction (will be multiplied by speed later)
-                    aimDirection = (target.position - spawnPosition).normalized;
+                    bool useLaserAim = config.enemyType == EnemyType.Sniper && config.usesLaserTelegraph && laserAimDirection.sqrMagnitude > 0.0001f;
+                    if (useLaserAim)
+                    {
+                        aimDirection = laserAimDirection.normalized;
+                    }
+                    else
+                    {
+                        aimDirection = (target.position - spawnPosition).normalized;
+                    }
                     
-                    // Apply accuracy cone
                     if (config.useAccuracyCone)
                     {
                         float totalSpread = config.baseSpreadAngle + (distanceToTarget * config.spreadMultiplier);
                         aimDirection = ApplySpread(aimDirection, totalSpread);
                     }
 
-                    // Apply shotgun pellet spread
                     if (config.weaponType == WeaponType.Shotgun && totalPellets > 1)
                     {
                         aimDirection = ApplySpread(aimDirection, config.pelletSpread);
