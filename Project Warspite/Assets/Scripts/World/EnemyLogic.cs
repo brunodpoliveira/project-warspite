@@ -13,9 +13,9 @@ namespace Warspite.World
         [Tooltip("If enabled, time dilation scales tracking using the multipliers below.")]
         public bool scaleWithTime = true;
         [Tooltip("Multiplier applied per time dilation level (index 0 = normal, 3 = deepest slow).")]
-        public float[] levelMultipliers = new float[4] { 1f, 0.65f, 0.4f, 0.2f };
+        public float[] levelMultipliers = new float[4] { 1f, 0.5f, 0.25f, 0.1f };
         [Tooltip("Lower bound on all computed multipliers so enemies never completely freeze.")]
-        [Range(0.01f, 1f)] public float minMultiplier = 0.05f;
+        [Range(0.001f, 1f)] public float minMultiplier = 0.01f;
     }
 
     /// <summary>
@@ -99,7 +99,7 @@ namespace Warspite.World
 
             if (trackingSettings.levelMultipliers == null || trackingSettings.levelMultipliers.Length == 0)
             {
-                trackingSettings.levelMultipliers = new float[4] { 1f, 0.65f, 0.4f, 0.2f };
+                trackingSettings.levelMultipliers = new float[4] { 1f, 0.5f, 0.25f, 0.1f };
             }
         }
 
@@ -166,6 +166,12 @@ namespace Warspite.World
             if (GetComponent<Warspite.UI.AutoHealthBar>() == null)
             {
                 gameObject.AddComponent<Warspite.UI.AutoHealthBar>();
+            }
+
+            // Auto-add DoomedTag so critical/drainable state visuals are always available
+            if (GetComponent<Warspite.World.DoomedTag>() == null)
+            {
+                gameObject.AddComponent<Warspite.World.DoomedTag>();
             }
         }
 
@@ -664,7 +670,8 @@ namespace Warspite.World
         
         private float EvaluateTrackingMultiplier()
         {
-            float multiplier = Mathf.Max(Time.timeScale, trackingSettings.minMultiplier);
+            // Start from current global time scale (0 = stopped, 1 = normal)
+            float multiplier = Time.timeScale;
 
             if (timeController == null && trackingSettings.scaleWithTime)
             {
@@ -674,10 +681,11 @@ namespace Warspite.World
             if (timeController != null && trackingSettings.levelMultipliers != null && trackingSettings.levelMultipliers.Length > 0)
             {
                 int levelIndex = Mathf.Clamp(timeController.CurrentLevel, 0, trackingSettings.levelMultipliers.Length - 1);
-                float levelMultiplier = Mathf.Max(trackingSettings.levelMultipliers[levelIndex], trackingSettings.minMultiplier);
+                float levelMultiplier = trackingSettings.levelMultipliers[levelIndex];
                 multiplier *= levelMultiplier;
             }
 
+            // Apply lower bound after all scaling so deep slow can meaningfully weaken tracking
             return Mathf.Max(multiplier, trackingSettings.minMultiplier);
         }
         

@@ -7,6 +7,7 @@ namespace Warspite.Player
     /// Player-specific health management.
     /// Health degenerates over time to encourage aggressive play.
     /// Can be restored by "sucking" critical enemies (vampire mechanic).
+    /// Also communicates with the time dilation resource when draining enemies.
     /// </summary>
     [RequireComponent(typeof(Health))]
     public class PlayerHealth : MonoBehaviour
@@ -21,6 +22,7 @@ namespace Warspite.Player
         [SerializeField] private float suckHealAmount = 30f;
         [SerializeField] private float gibbedHealPenalty = 0.5f; // Multiplier if enemy is gibbed
         [SerializeField] private KeyCode suckKey = KeyCode.F;
+        [SerializeField] private float suckTimeReward = 25f; // Time dilation resource restored per suck
         
         [Header("Debug")]
         [SerializeField] private bool allowGodModeToggle = true;
@@ -28,6 +30,7 @@ namespace Warspite.Player
         [SerializeField] private bool godModeEnabled = false;
 
         private Health health;
+        private Warspite.Systems.TimeDilationResource timeResource;
         private float timeSinceLastDamage;
 
         public bool IsGodModeEnabled => godModeEnabled;
@@ -56,6 +59,12 @@ namespace Warspite.Player
             if (health.OnDamaged != null)
             {
                 health.OnDamaged.AddListener(OnDamaged);
+            }
+
+            // Auto-find time dilation resource
+            if (timeResource == null)
+            {
+                timeResource = FindFirstObjectByType<Warspite.Systems.TimeDilationResource>();
             }
         }
 
@@ -138,6 +147,17 @@ namespace Warspite.Player
 
                     // Heal player
                     health.Heal(healAmount);
+
+                    // Restore time dilation resource
+                    if (timeResource == null)
+                    {
+                        timeResource = FindFirstObjectByType<Warspite.Systems.TimeDilationResource>();
+                    }
+
+                    if (timeResource != null && suckTimeReward > 0f)
+                    {
+                        timeResource.Recharge(suckTimeReward);
+                    }
 
                     // Kill enemy
                     enemyHealth.TakeDamage(enemyHealth.CurrentHealth);

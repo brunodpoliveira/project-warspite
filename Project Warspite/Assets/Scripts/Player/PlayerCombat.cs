@@ -52,8 +52,9 @@ namespace Warspite.Player
         private TrajectoryIndicator trajectoryIndicator;
 
         // Public properties for UI
-        public bool IsPunchReady => Time.time >= lastPunchTime + punchCooldown;
-        public float GetCooldownProgress() => Mathf.Clamp01(1f - ((Time.time - lastPunchTime) / punchCooldown));
+        // Use unscaled time so punch cooldown is independent of global time dilation
+        public bool IsPunchReady => Time.unscaledTime >= lastPunchTime + punchCooldown;
+        public float GetCooldownProgress() => Mathf.Clamp01(1f - ((Time.unscaledTime - lastPunchTime) / punchCooldown));
         public bool HasCaughtProjectile => caughtProjectile != null;
 
         void Start()
@@ -111,7 +112,8 @@ namespace Warspite.Player
 
         private void PerformPunch()
         {
-            lastPunchTime = Time.time;
+            // Record using unscaled time so cooldown ignores time dilation
+            lastPunchTime = Time.unscaledTime;
 
             Vector3 punchDirection = playerCamera.transform.forward;
             Vector3 punchOrigin = transform.position + Vector3.up * 1f;
